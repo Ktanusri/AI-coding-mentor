@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Coding Journey</title>
+</head>
+
+<body>
+
+<h1>Your Coding Journey</h1>
+
+<ul>
+
+{% for submission in submissions %}
+
+<li>
+Submission {{ submission[0] }} → {{ submission[1] }}
+</li>
+{% endfor %}
+
+</ul>
+
+<a href="/dashboard">Back to Dashboard</a>
+
+</body>
+</html>

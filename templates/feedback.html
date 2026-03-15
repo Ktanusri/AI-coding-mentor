@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title>Submission Result</title>
+</head>
+
+<body>
+
+<h1>Submission Result</h1>
+
+<p>{{ feedback }}</p>
+
+{% if results %}
+
+<h2>Test Case Results</h2>
+
+<ul>
+{% for r in results %}
+<li>{{ r }}</li>
+{% endfor %}
+</ul>
+
+{% endif %}
+
+<h2>Hint</h2>
+
+<p>{{ hint }}</p>
+
+<br>
+
+<a href="/practice">Try Another Problem</a>
+
+<br><br>
+
+<a href="/dashboard">Go to Dashboard</a>
+
+</body>
+</html>

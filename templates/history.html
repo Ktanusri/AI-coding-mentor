@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Submission History</title>
+</head>
+<body>
+
+<h1>Your Code Submissions</h1>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>Code</th>
+</tr>
+
+{% for submission in submissions %}
+
+<tr>
+<td>{{ submission[0] }}</td>
+<td>{{ submission[1] }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>
