@@ -2,7 +2,11 @@
 <html>
 <head>
 <title>CodeMentor</title>
+
 <link rel="stylesheet" href="/static/style.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
+
 </head>
 
 <body>
@@ -17,43 +21,53 @@
 
 </div>
 
+
 <div class="main">
 
+
 <!-- DASHBOARD -->
+
 <div id="dashboard" class="page">
 
 <h1>Dashboard</h1>
 
 <div class="card">
+
 <h3>{{ total_submissions }}</h3>
+
 <p>Total Submissions</p>
+
 </div>
 
 <div class="card">
+
 <h3>Practice</h3>
+
 <p>Start Coding</p>
+
 </div>
 
 </div>
+
 
 
 <!-- PRACTICE -->
+
 <div id="practice" class="page" style="display:none;">
 
 <h1>{{ problem.title }}</h1>
+
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit">
 
-<!-- Monaco editor container -->
-<div id="editor" style="height:300px;border:1px solid #ccc;"></div>
+<div id="editor" style="height:350px;border:1px solid #ccc;"></div>
 
-<!-- Hidden input to send code to Flask -->
 <input type="hidden" name="code" id="code">
 
 <br><br>
 
-<input type="number" name="duration" placeholder="Time taken (seconds)">
+<input type="number" name="duration" placeholder="Time taken">
 
 <br><br>
 
@@ -63,7 +77,10 @@
 
 </div>
 
+
+
 <!-- HISTORY -->
+
 <div id="history" class="page" style="display:none;">
 
 <h1>Submission History</h1>
@@ -88,7 +105,9 @@
 
 </div>
 
+
 </div>
+
 
 <script>
 
@@ -97,7 +116,9 @@ function showPage(page){
 let pages=document.getElementsByClassName("page");
 
 for(let i=0;i<pages.length;i++){
+
 pages[i].style.display="none";
+
 }
 
 document.getElementById(page).style.display="block";
@@ -105,27 +126,39 @@ document.getElementById(page).style.display="block";
 }
 
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
+
+
 
 <script>
 
-require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' }});
+require.config({
+paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}
+});
 
-require(["vs/editor/editor.main"], function () {
+require(["vs/editor/editor.main"],function(){
 
-window.editor = monaco.editor.create(document.getElementById('editor'), {
-value: "def find_max(arr):\n    # write your code here\n    pass",
-language: "python",
-theme: "vs-dark",
-automaticLayout: true
+window.editor=monaco.editor.create(document.getElementById("editor"),{
+
+value:"def find_max(arr):\n    # write your code here\n    pass",
+
+language:"python",
+
+theme:"vs-dark",
+
+automaticLayout:true
+
 });
 
 });
 
 function saveCode(){
-document.getElementById("code").value = editor.getValue();
+
+document.getElementById("code").value=editor.getValue();
+
 }
 
 </script>
+
 </body>
+
 </html>

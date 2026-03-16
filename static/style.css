@@ -1,5 +1,5 @@
 body{
-font-family: Arial, sans-serif;
+font-family:Arial, sans-serif;
 margin:0;
 background:linear-gradient(120deg,#667eea,#764ba2);
 color:white;
@@ -43,13 +43,37 @@ padding:20px;
 margin:10px;
 border-radius:10px;
 display:inline-block;
-width:200px;
+width:220px;
 text-align:center;
 }
 
-textarea{
-width:80%;
-height:150px;
-border-radius:6px;
+table{
+background:white;
+color:black;
+margin:auto;
 padding:10px;
+border-radius:8px;
+}
+
+th,td{
+padding:10px;
+}
+
+button{
+padding:10px 20px;
+border:none;
+background:#ff6b6b;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+input{
+padding:10px;
+border-radius:6px;
+border:none;
+}
+
+.page{
+margin-top:40px;
 }
