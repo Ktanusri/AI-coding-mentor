@@ -41,25 +41,27 @@
 <div id="practice" class="page" style="display:none;">
 
 <h1>{{ problem.title }}</h1>
-
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit">
 
-<textarea name="code" placeholder="Write your code here"></textarea>
+<!-- Monaco editor container -->
+<div id="editor" style="height:300px;border:1px solid #ccc;"></div>
+
+<!-- Hidden input to send code to Flask -->
+<input type="hidden" name="code" id="code">
 
 <br><br>
 
-<input type="number" name="duration" placeholder="Time taken">
+<input type="number" name="duration" placeholder="Time taken (seconds)">
 
 <br><br>
 
-<button type="submit">Submit Code</button>
+<button type="submit" onclick="saveCode()">Submit Code</button>
 
 </form>
 
 </div>
-
 
 <!-- HISTORY -->
 <div id="history" class="page" style="display:none;">
@@ -103,6 +105,27 @@ document.getElementById(page).style.display="block";
 }
 
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
 
+<script>
+
+require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' }});
+
+require(["vs/editor/editor.main"], function () {
+
+window.editor = monaco.editor.create(document.getElementById('editor'), {
+value: "def find_max(arr):\n    # write your code here\n    pass",
+language: "python",
+theme: "vs-dark",
+automaticLayout: true
+});
+
+});
+
+function saveCode(){
+document.getElementById("code").value = editor.getValue();
+}
+
+</script>
 </body>
 </html>
