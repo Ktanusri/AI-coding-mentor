@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>CodeMentor</title>
 
 <link rel="stylesheet" href="/static/style.css">
@@ -8,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
 
 </head>
+
 
 <body>
 
@@ -32,19 +34,13 @@
 <h1>Dashboard</h1>
 
 <div class="card">
-
 <h3>{{ total_submissions }}</h3>
-
 <p>Total Submissions</p>
-
 </div>
 
 <div class="card">
-
 <h3>Practice</h3>
-
 <p>Start Coding</p>
-
 </div>
 
 </div>
@@ -71,9 +67,16 @@
 
 <br><br>
 
+<button type="button" onclick="runCode()">Run Code</button>
+
 <button type="submit" onclick="saveCode()">Submit Code</button>
 
 </form>
+
+
+<div id="output" style="margin-top:20px;background:#111;color:#fff;padding:10px;border-radius:6px;">
+Output will appear here
+</div>
 
 </div>
 
@@ -107,6 +110,7 @@
 
 
 </div>
+
 
 
 <script>
@@ -151,14 +155,42 @@ automaticLayout:true
 
 });
 
+
 function saveCode(){
 
 document.getElementById("code").value=editor.getValue();
 
 }
 
+
+function runCode(){
+
+let code = editor.getValue();
+
+fetch("/run", {
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
+
+body:"code="+encodeURIComponent(code)
+
+})
+
+.then(response=>response.text())
+
+.then(data=>{
+
+document.getElementById("output").innerText="Output: "+data;
+
+});
+
+}
+
 </script>
 
-</body>
 
+</body>
 </html>

@@ -89,6 +89,26 @@ def submit():
         feedback=feedback
     )
 
+@app.route("/run", methods=["POST"])
+def run_code():
+    user_code = request.form.get("code")
+
+    output = ""
+
+    try:
+        local_scope = {}
+        exec(user_code, {}, local_scope)
+
+        if "find_max" in local_scope:
+            result = local_scope["find_max"]([3,5,1,8,2])
+            output = str(result)
+        else:
+            output = "Function find_max not found."
+
+    except Exception as e:
+        output = str(e)
+
+    return output
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
