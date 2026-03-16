@@ -4,18 +4,15 @@ import random
 
 app = Flask(__name__)
 
+
+# -------------------------------
+# Database Initialization
+# -------------------------------
+
 def init_db():
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS submissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            code TEXT,
-            duration REAL
-        )
-    """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -25,11 +22,24 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            code TEXT,
+            duration REAL
+        )
+    """)
+
     conn.commit()
     conn.close()
 
 init_db()
 
+
+# -------------------------------
+# Coding Problems
+# -------------------------------
 
 problems = [
 
@@ -76,6 +86,10 @@ problems = [
 ]
 
 
+# -------------------------------
+# Home Page
+# -------------------------------
+
 @app.route("/")
 def home():
 
@@ -108,18 +122,23 @@ def home():
     )
 
 
+# -------------------------------
+# Submit Code
+# -------------------------------
+
 @app.route("/submit", methods=["POST"])
 def submit():
 
     user_code = request.form.get("code")
     duration = request.form.get("duration")
+    username = request.form.get("username","guest")
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO submissions (code, duration) VALUES (?, ?)",
-        (user_code, duration)
+        "INSERT INTO submissions (username, code, duration) VALUES (?, ?, ?)",
+        (username, user_code, duration)
     )
 
     conn.commit()
@@ -127,6 +146,10 @@ def submit():
 
     return "Code submitted successfully!"
 
+
+# -------------------------------
+# Run Code
+# -------------------------------
 
 @app.route("/run", methods=["POST"])
 def run_code():
@@ -151,6 +174,10 @@ def run_code():
     return output
 
 
+# -------------------------------
+# Signup
+# -------------------------------
+
 @app.route("/signup", methods=["GET","POST"])
 def signup():
 
@@ -170,10 +197,14 @@ def signup():
         conn.commit()
         conn.close()
 
-        return "Signup successful! Now go to /login"
+        return "Signup successful! Go to /login"
 
     return render_template("signup.html")
 
+
+# -------------------------------
+# Login
+# -------------------------------
 
 @app.route("/login", methods=["GET","POST"])
 def login():
@@ -202,6 +233,34 @@ def login():
 
     return render_template("login.html")
 
+
+# -------------------------------
+# Leaderboard
+# -------------------------------
+
+@app.route("/leaderboard")
+def leaderboard():
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT username, COUNT(*) as solved
+        FROM submissions
+        GROUP BY username
+        ORDER BY solved DESC
+    """)
+
+    leaderboard_data = cursor.fetchall()
+
+    conn.close()
+
+    return render_template("leaderboard.html", leaderboard=leaderboard_data)
+
+
+# -------------------------------
+# Run Server
+# -------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

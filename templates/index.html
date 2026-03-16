@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <title>CodeMentor</title>
@@ -20,6 +21,9 @@
 <a href="#" onclick="showPage('dashboard')">Dashboard</a>
 <a href="#" onclick="showPage('practice')">Practice</a>
 <a href="#" onclick="showPage('history')">History</a>
+<a href="/leaderboard">Leaderboard</a>
+<a href="/login">Login</a>
+<a href="/signup">Signup</a>
 
 </div>
 
@@ -27,7 +31,7 @@
 <div class="main">
 
 
-<!-- DASHBOARD -->
+<!-- ================= Dashboard ================= -->
 
 <div id="dashboard" class="page">
 
@@ -50,7 +54,9 @@
 
 </div>
 
-<!-- PRACTICE -->
+
+
+<!-- ================= Practice ================= -->
 
 <div id="practice" class="page" style="display:none;">
 
@@ -68,7 +74,11 @@
 
 <br><br>
 
-<input type="number" name="duration" placeholder="Time taken">
+<input type="text" name="username" placeholder="Username">
+
+<br><br>
+
+<input type="number" name="duration" placeholder="Time taken (seconds)">
 
 <br><br>
 
@@ -87,7 +97,7 @@ Output will appear here
 
 
 
-<!-- HISTORY -->
+<!-- ================= History ================= -->
 
 <div id="history" class="page" style="display:none;">
 
@@ -96,15 +106,17 @@ Output will appear here
 <table>
 
 <tr>
-<th>ID</th>
+<th>User</th>
 <th>Code</th>
+<th>Duration</th>
 </tr>
 
 {% for sub in submissions %}
 
 <tr>
-<td>{{ sub[0] }}</td>
 <td>{{ sub[1] }}</td>
+<td>{{ sub[2] }}</td>
+<td>{{ sub[3] }}</td>
 </tr>
 
 {% endfor %}
@@ -117,6 +129,8 @@ Output will appear here
 </div>
 
 
+
+<!-- ================= Navigation Script ================= -->
 
 <script>
 
@@ -137,6 +151,8 @@ document.getElementById(page).style.display="block";
 </script>
 
 
+
+<!-- ================= Monaco Editor ================= -->
 
 <script>
 
@@ -167,6 +183,13 @@ document.getElementById("code").value=editor.getValue();
 
 }
 
+</script>
+
+
+
+<!-- ================= Run Code Script ================= -->
+
+<script>
 
 function runCode(){
 

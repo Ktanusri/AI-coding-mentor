@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Leaderboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>🏆 Leaderboard</h1>
+
+<table>
+
+<tr>
+<th>User</th>
+<th>Problems Solved</th>
+</tr>
+
+{% for user in leaderboard %}
+
+<tr>
+<td>{{ user[0] }}</td>
+<td>{{ user[1] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+
+</html>
