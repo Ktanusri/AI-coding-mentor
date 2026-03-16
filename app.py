@@ -5,8 +5,10 @@ import random
 app = Flask(__name__)
 
 def init_db():
+
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS submissions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,10 +16,20 @@ def init_db():
             duration REAL
         )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            password TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
 
 init_db()
+
 
 problems = [
 
@@ -62,6 +74,7 @@ problems = [
 }
 
 ]
+
 
 @app.route("/")
 def home():
@@ -112,15 +125,12 @@ def submit():
     conn.commit()
     conn.close()
 
-    feedback = "Code submitted successfully!"
+    return "Code submitted successfully!"
 
-    return render_template(
-        "index.html",
-        feedback=feedback
-    )
 
 @app.route("/run", methods=["POST"])
 def run_code():
+
     user_code = request.form.get("code")
 
     output = ""
@@ -139,6 +149,59 @@ def run_code():
         output = str(e)
 
     return output
+
+
+@app.route("/signup", methods=["GET","POST"])
+def signup():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "INSERT INTO users (username,password) VALUES (?,?)",
+            (username,password)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return "Signup successful! Now go to /login"
+
+    return render_template("signup.html")
+
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE username=? AND password=?",
+            (username,password)
+        )
+
+        user = cursor.fetchone()
+
+        conn.close()
+
+        if user:
+            return "Login successful!"
+        else:
+            return "Invalid credentials"
+
+    return render_template("login.html")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
