@@ -7,34 +7,48 @@
 
 <body>
 
-<div class="navbar">
+<div class="sidebar">
+
 <h2>🚀 CodeMentor</h2>
 
-<button onclick="showPage('home')">Home</button>
-<button onclick="showPage('practice')">Practice</button>
-<button onclick="showPage('dashboard')">Dashboard</button>
-<button onclick="showPage('history')">History</button>
+<a href="#" onclick="showPage('dashboard')">Dashboard</a>
+<a href="#" onclick="showPage('practice')">Practice</a>
+<a href="#" onclick="showPage('history')">History</a>
 
 </div>
 
-<!-- HOME -->
-<div id="home" class="page">
-<h1>Welcome to CodeMentor 🚀</h1>
-<p>Your AI Coding Growth Companion</p>
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="page">
+
+<h1>Dashboard</h1>
+
+<div class="card">
+<h3>{{ total_submissions }}</h3>
+<p>Total Submissions</p>
+</div>
+
+<div class="card">
+<h3>Practice</h3>
+<p>Start Coding</p>
+</div>
+
 </div>
 
 
 <!-- PRACTICE -->
 <div id="practice" class="page" style="display:none;">
 
-<h2>{{ problem.title }}</h2>
+<h1>{{ problem.title }}</h1>
+
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit">
 
 <textarea name="code" placeholder="Write your code here"></textarea>
 
-<br>
+<br><br>
 
 <input type="number" name="duration" placeholder="Time taken">
 
@@ -47,20 +61,10 @@
 </div>
 
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="page" style="display:none;">
-
-<h2>Dashboard</h2>
-
-<p>Total Submissions: {{ total_submissions }}</p>
-
-</div>
-
-
 <!-- HISTORY -->
 <div id="history" class="page" style="display:none;">
 
-<h2>Submission History</h2>
+<h1>Submission History</h1>
 
 <table>
 
@@ -82,12 +86,13 @@
 
 </div>
 
+</div>
 
 <script>
 
 function showPage(page){
 
-let pages = document.getElementsByClassName("page");
+let pages=document.getElementsByClassName("page");
 
 for(let i=0;i<pages.length;i++){
 pages[i].style.display="none";
