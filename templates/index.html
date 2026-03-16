@@ -1,13 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CodeMentor</title>
+<title>CodeMentor</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
+<div class="navbar">
+<h2>🚀 CodeMentor</h2>
+
+<button onclick="showPage('home')">Home</button>
+<button onclick="showPage('practice')">Practice</button>
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('history')">History</button>
+
+</div>
+
+<!-- HOME -->
+<div id="home" class="page">
 <h1>Welcome to CodeMentor 🚀</h1>
 <p>Your AI Coding Growth Companion</p>
+</div>
+
+
+<!-- PRACTICE -->
+<div id="practice" class="page" style="display:none;">
+
+<h2>{{ problem.title }}</h2>
+<p>{{ problem.description }}</p>
+
+<form method="POST" action="/submit">
+
+<textarea name="code" placeholder="Write your code here"></textarea>
+
+<br>
+
+<input type="number" name="duration" placeholder="Time taken">
+
+<br><br>
+
+<button type="submit">Submit Code</button>
+
+</form>
+
+</div>
+
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="page" style="display:none;">
+
+<h2>Dashboard</h2>
+
+<p>Total Submissions: {{ total_submissions }}</p>
+
+</div>
+
+
+<!-- HISTORY -->
+<div id="history" class="page" style="display:none;">
+
+<h2>Submission History</h2>
+
+<table>
+
+<tr>
+<th>ID</th>
+<th>Code</th>
+</tr>
+
+{% for sub in submissions %}
+
+<tr>
+<td>{{ sub[0] }}</td>
+<td>{{ sub[1] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+
+<script>
+
+function showPage(page){
+
+let pages = document.getElementsByClassName("page");
+
+for(let i=0;i<pages.length;i++){
+pages[i].style.display="none";
+}
+
+document.getElementById(page).style.display="block";
+
+}
+
+</script>
 
 </body>
 </html>
