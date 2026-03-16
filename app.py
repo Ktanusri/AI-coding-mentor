@@ -72,6 +72,12 @@ def home():
     cursor.execute("SELECT COUNT(*) FROM submissions")
     total_submissions = cursor.fetchone()[0]
 
+    cursor.execute("SELECT AVG(duration) FROM submissions")
+    avg_time = cursor.fetchone()[0]
+
+    if avg_time is None:
+        avg_time = 0
+
     cursor.execute("SELECT * FROM submissions")
     submissions = cursor.fetchall()
 
@@ -82,8 +88,10 @@ def home():
     return render_template(
         "index.html",
         problem=problem,
+        submissions=submissions,
         total_submissions=total_submissions,
-        submissions=submissions
+        avg_time=round(avg_time,2),
+        problems_solved=total_submissions
     )
 
 
