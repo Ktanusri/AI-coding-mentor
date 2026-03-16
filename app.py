@@ -20,26 +20,48 @@ def init_db():
 init_db()
 
 problems = [
-    {
-        "title": "Find Maximum",
-        "description": "Write a function that returns the maximum number from a list.",
-        "example_input": "[3,5,1,8,2]",
-        "example_output": "8"
-    },
-    {
-        "title": "Sum of Array",
-        "description": "Return the sum of numbers in a list.",
-        "example_input": "[1,2,3,4]",
-        "example_output": "10"
-    },
-    {
-        "title": "Palindrome Check",
-        "description": "Check if a string is a palindrome.",
-        "example_input": '"madam"',
-        "example_output": "True"
-    }
-]
 
+{
+"title":"Find Maximum",
+"description":"Write a function that returns the maximum number from a list.",
+"difficulty":"Easy",
+"example_input":"[3,5,1,8,2]",
+"example_output":"8"
+},
+
+{
+"title":"Sum of Array",
+"description":"Return the sum of numbers in a list.",
+"difficulty":"Easy",
+"example_input":"[1,2,3,4]",
+"example_output":"10"
+},
+
+{
+"title":"Palindrome Check",
+"description":"Check if a string is a palindrome.",
+"difficulty":"Medium",
+"example_input":"madam",
+"example_output":"True"
+},
+
+{
+"title":"Second Largest Number",
+"description":"Find the second largest number in a list.",
+"difficulty":"Medium",
+"example_input":"[4,7,1,9,3]",
+"example_output":"7"
+},
+
+{
+"title":"Longest Word",
+"description":"Return the longest word in a sentence.",
+"difficulty":"Hard",
+"example_input":"AI coding mentor project",
+"example_output":"project"
+}
+
+]
 
 @app.route("/")
 def home():
