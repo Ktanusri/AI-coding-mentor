@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request
 import sqlite3
 import json
+import os
+from openai import OpenAI
 
 app = Flask(__name__)
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ---------------- DATABASE ----------------
 
@@ -37,6 +41,21 @@ init_db()
 with open("problems.json") as f:
     problems = json.load(f)
 
+# ---------------- AI FEEDBACK ----------------
+
+def get_ai_feedback(code):
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": "You are a coding mentor."},
+                {"role": "user", "content": f"Review this Python code:\n{code}"}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"AI error: {str(e)}"
+
 # ---------------- HOME ----------------
 
 @app.route("/")
@@ -50,7 +69,6 @@ def home():
 
     cursor.execute("SELECT AVG(duration) FROM submissions")
     avg_time = cursor.fetchone()[0]
-
     if avg_time is None:
         avg_time = 0
 
@@ -59,9 +77,7 @@ def home():
 
     conn.close()
 
-    # get selected problem
     index = request.args.get("problem")
-
     if index:
         problem = problems[int(index)]
     else:
@@ -73,8 +89,9 @@ def home():
         problems=problems,
         submissions=submissions,
         total_submissions=total_submissions,
-        avg_time=round(avg_time,2),
-        problems_solved=total_submissions
+        avg_time=round(avg_time, 2),
+        problems_solved=total_submissions,
+        feedback=""
     )
 
 # ---------------- RUN CODE ----------------
@@ -98,7 +115,6 @@ def run_code():
         func_name = problem["function_name"]
 
         if func_name in local_scope:
-
             func = local_scope[func_name]
 
             for inp, expected in problem["test_cases"]:
@@ -113,7 +129,6 @@ def run_code():
                 total += 1
                 if func(inp) == expected:
                     passed += 1
-
         else:
             return "Function not found"
 
@@ -129,7 +144,9 @@ def submit():
 
     user_code = request.form.get("code")
     duration = request.form.get("duration")
-    username = request.form.get("username","guest")
+    username = request.form.get("username", "guest")
+
+    feedback = get_ai_feedback(user_code)
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -142,15 +159,20 @@ def submit():
     conn.commit()
     conn.close()
 
-    return "Submitted!"
+    return render_template(
+        "index.html",
+        feedback=feedback,
+        problem=problems[0],
+        problems=problems
+    )
 
-# ---------------- PROBLEM LIST ----------------
+# ---------------- PROBLEMS ----------------
 
 @app.route("/problems")
-def problem_list():
+def problems_page():
     return render_template("problems.html", problems=problems)
 
-# ---------------- LEADERBOARD ----------------
+# ---------------- LEADERBOARD (FIXED) ----------------
 
 @app.route("/leaderboard")
 def leaderboard():
@@ -159,20 +181,20 @@ def leaderboard():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT username, COUNT(*) 
-        FROM submissions 
-        GROUP BY username 
-        ORDER BY COUNT(*) DESC
+        SELECT username, COUNT(*) as total
+        FROM submissions
+        GROUP BY username
+        ORDER BY total DESC
     """)
 
-    data = cursor.fetchall()
+    leaderboard_data = cursor.fetchall()
     conn.close()
 
-    return render_template("leaderboard.html", leaderboard=data)
+    return render_template("leaderboard.html", leaderboard=leaderboard_data)
 
 # ---------------- LOGIN ----------------
 
-@app.route("/login", methods=["GET","POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "POST":
@@ -185,22 +207,22 @@ def login():
 
         cursor.execute(
             "SELECT * FROM users WHERE username=? AND password=?",
-            (username,password)
+            (username, password)
         )
 
         user = cursor.fetchone()
         conn.close()
 
         if user:
-            return "Login success"
+            return "Login successful!"
         else:
-            return "Invalid login"
+            return "Invalid credentials"
 
     return render_template("login.html")
 
 # ---------------- SIGNUP ----------------
 
-@app.route("/signup", methods=["GET","POST"])
+@app.route("/signup", methods=["GET", "POST"])
 def signup():
 
     if request.method == "POST":
@@ -213,13 +235,13 @@ def signup():
 
         cursor.execute(
             "INSERT INTO users (username,password) VALUES (?,?)",
-            (username,password)
+            (username, password)
         )
 
         conn.commit()
         conn.close()
 
-        return "Signup success"
+        return "Signup successful!"
 
     return render_template("signup.html")
 

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 <title>Leaderboard</title>
 <link rel="stylesheet" href="/static/style.css">
@@ -10,11 +9,11 @@
 
 <h1>🏆 Leaderboard</h1>
 
-<table>
+<table border="1" cellpadding="10">
 
 <tr>
-<th>User</th>
-<th>Problems Solved</th>
+<th>Username</th>
+<th>Submissions</th>
 </tr>
 
 {% for user in leaderboard %}
@@ -29,5 +28,4 @@
 </table>
 
 </body>
-
 </html>
