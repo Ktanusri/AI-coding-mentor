@@ -1,16 +1,13 @@
 from flask import Flask, render_template, request
 import sqlite3
-import random
+import json
 
 app = Flask(__name__)
 
 
-# -------------------------------
-# Database Initialization
-# -------------------------------
+# ---------------- DATABASE ----------------
 
 def init_db():
-
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
@@ -37,58 +34,13 @@ def init_db():
 init_db()
 
 
-# -------------------------------
-# Coding Problems
-# -------------------------------
+# ---------------- LOAD PROBLEMS ----------------
 
-problems = [
-
-{
-"title":"Find Maximum",
-"description":"Write a function that returns the maximum number from a list.",
-"difficulty":"Easy",
-"example_input":"[3,5,1,8,2]",
-"example_output":"8"
-},
-
-{
-"title":"Sum of Array",
-"description":"Return the sum of numbers in a list.",
-"difficulty":"Easy",
-"example_input":"[1,2,3,4]",
-"example_output":"10"
-},
-
-{
-"title":"Palindrome Check",
-"description":"Check if a string is a palindrome.",
-"difficulty":"Medium",
-"example_input":"madam",
-"example_output":"True"
-},
-
-{
-"title":"Second Largest Number",
-"description":"Find the second largest number in a list.",
-"difficulty":"Medium",
-"example_input":"[4,7,1,9,3]",
-"example_output":"7"
-},
-
-{
-"title":"Longest Word",
-"description":"Return the longest word in a sentence.",
-"difficulty":"Hard",
-"example_input":"AI coding mentor project",
-"example_output":"project"
-}
-
-]
+with open("problems.json") as f:
+    problems = json.load(f)
 
 
-# -------------------------------
-# Home Page
-# -------------------------------
+# ---------------- HOME ----------------
 
 @app.route("/")
 def home():
@@ -110,7 +62,7 @@ def home():
 
     conn.close()
 
-    problem = random.choice(problems)
+    problem = problems[0]   # for now fixed
 
     return render_template(
         "index.html",
@@ -122,9 +74,57 @@ def home():
     )
 
 
-# -------------------------------
-# Submit Code
-# -------------------------------
+# ---------------- RUN CODE (TEST CASE SYSTEM) ----------------
+
+@app.route("/run", methods=["POST"])
+def run_code():
+
+    user_code = request.form.get("code")
+    problem = problems[0]
+
+    results = []
+    passed = 0
+    total = 0
+
+    try:
+        local_scope = {}
+        exec(user_code, {}, local_scope)
+
+        func_name = problem["function_name"]
+
+        if func_name in local_scope:
+
+            func = local_scope[func_name]
+
+            # visible cases
+            for inp, expected in problem["test_cases"]:
+                total += 1
+                result = func(inp)
+
+                if result == expected:
+                    results.append("Pass")
+                    passed += 1
+                else:
+                    results.append("Fail")
+
+            # hidden cases
+            for inp, expected in problem["hidden_cases"]:
+                total += 1
+                result = func(inp)
+
+                if result == expected:
+                    passed += 1
+
+        else:
+            return "Function not found"
+
+    except Exception as e:
+        return str(e)
+
+    return f"Results: {results} | Score: {passed}/{total}"
+
+
+# ---------------- SUBMIT ----------------
 
 @app.route("/submit", methods=["POST"])
 def submit():
@@ -147,36 +147,7 @@ def submit():
     return "Code submitted successfully!"
 
 
-# -------------------------------
-# Run Code
-# -------------------------------
-
-@app.route("/run", methods=["POST"])
-def run_code():
-
-    user_code = request.form.get("code")
-
-    output = ""
-
-    try:
-        local_scope = {}
-        exec(user_code, {}, local_scope)
-
-        if "find_max" in local_scope:
-            result = local_scope["find_max"]([3,5,1,8,2])
-            output = str(result)
-        else:
-            output = "Function find_max not found."
-
-    except Exception as e:
-        output = str(e)
-
-    return output
-
-
-# -------------------------------
-# Signup
-# -------------------------------
+# ---------------- SIGNUP ----------------
 
 @app.route("/signup", methods=["GET","POST"])
 def signup():
@@ -197,14 +168,12 @@ def signup():
         conn.commit()
         conn.close()
 
-        return "Signup successful! Go to /login"
+        return "Signup successful!"
 
     return render_template("signup.html")
 
 
-# -------------------------------
-# Login
-# -------------------------------
+# ---------------- LOGIN ----------------
 
 @app.route("/login", methods=["GET","POST"])
 def login():
@@ -234,9 +203,7 @@ def login():
     return render_template("login.html")
 
 
-# -------------------------------
-# Leaderboard
-# -------------------------------
+# ---------------- LEADERBOARD ----------------
 
 @app.route("/leaderboard")
 def leaderboard():
@@ -258,9 +225,7 @@ def leaderboard():
     return render_template("leaderboard.html", leaderboard=leaderboard_data)
 
 
-# -------------------------------
-# Run Server
-# -------------------------------
+# ---------------- RUN SERVER ----------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Find Maximum",
+    "description": "Return maximum number from list",
+    "difficulty": "Easy",
+    "function_name": "find_max",
+    "test_cases": [
+      [[3,5,1,8,2],8],
+      [[10,2,7],10]
+    ],
+    "hidden_cases": [
+      [[1],1],
+      [[9,9,9],9]
+    ]
+  },
+  {
+    "title": "Sum of Array",
+    "description": "Return sum of list",
+    "difficulty": "Easy",
+    "function_name": "find_sum",
+    "test_cases": [
+      [[1,2,3],6],
+      [[5,5],10]
+    ],
+    "hidden_cases": [
+      [[0],0],
+      [[10,10],20]
+    ]
+  }
+]
