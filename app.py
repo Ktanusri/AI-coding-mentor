@@ -4,7 +4,6 @@ import json
 
 app = Flask(__name__)
 
-
 # ---------------- DATABASE ----------------
 
 def init_db():
@@ -33,12 +32,10 @@ def init_db():
 
 init_db()
 
-
 # ---------------- LOAD PROBLEMS ----------------
 
 with open("problems.json") as f:
     problems = json.load(f)
-
 
 # ---------------- HOME ----------------
 
@@ -62,25 +59,33 @@ def home():
 
     conn.close()
 
-    problem = problems[0]   # for now fixed
+    # get selected problem
+    index = request.args.get("problem")
+
+    if index:
+        problem = problems[int(index)]
+    else:
+        problem = problems[0]
 
     return render_template(
         "index.html",
         problem=problem,
+        problems=problems,
         submissions=submissions,
         total_submissions=total_submissions,
         avg_time=round(avg_time,2),
         problems_solved=total_submissions
     )
 
-
-# ---------------- RUN CODE (TEST CASE SYSTEM) ----------------
+# ---------------- RUN CODE ----------------
 
 @app.route("/run", methods=["POST"])
 def run_code():
 
     user_code = request.form.get("code")
-    problem = problems[0]
+    index = request.form.get("problem_index")
+
+    problem = problems[int(index)] if index else problems[0]
 
     results = []
     passed = 0
@@ -96,23 +101,17 @@ def run_code():
 
             func = local_scope[func_name]
 
-            # visible cases
             for inp, expected in problem["test_cases"]:
                 total += 1
-                result = func(inp)
-
-                if result == expected:
+                if func(inp) == expected:
                     results.append("Pass")
                     passed += 1
                 else:
                     results.append("Fail")
 
-            # hidden cases
             for inp, expected in problem["hidden_cases"]:
                 total += 1
-                result = func(inp)
-
-                if result == expected:
+                if func(inp) == expected:
                     passed += 1
 
         else:
@@ -122,7 +121,6 @@ def run_code():
         return str(e)
 
     return f"Results: {results} | Score: {passed}/{total}"
-
 
 # ---------------- SUBMIT ----------------
 
@@ -144,8 +142,61 @@ def submit():
     conn.commit()
     conn.close()
 
-    return "Code submitted successfully!"
+    return "Submitted!"
 
+# ---------------- PROBLEM LIST ----------------
+
+@app.route("/problems")
+def problem_list():
+    return render_template("problems.html", problems=problems)
+
+# ---------------- LEADERBOARD ----------------
+
+@app.route("/leaderboard")
+def leaderboard():
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT username, COUNT(*) 
+        FROM submissions 
+        GROUP BY username 
+        ORDER BY COUNT(*) DESC
+    """)
+
+    data = cursor.fetchall()
+    conn.close()
+
+    return render_template("leaderboard.html", leaderboard=data)
+
+# ---------------- LOGIN ----------------
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE username=? AND password=?",
+            (username,password)
+        )
+
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            return "Login success"
+        else:
+            return "Invalid login"
+
+    return render_template("login.html")
 
 # ---------------- SIGNUP ----------------
 
@@ -168,64 +219,11 @@ def signup():
         conn.commit()
         conn.close()
 
-        return "Signup successful!"
+        return "Signup success"
 
     return render_template("signup.html")
 
-
-# ---------------- LOGIN ----------------
-
-@app.route("/login", methods=["GET","POST"])
-def login():
-
-    if request.method == "POST":
-
-        username = request.form["username"]
-        password = request.form["password"]
-
-        conn = sqlite3.connect("database.db")
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (username,password)
-        )
-
-        user = cursor.fetchone()
-
-        conn.close()
-
-        if user:
-            return "Login successful!"
-        else:
-            return "Invalid credentials"
-
-    return render_template("login.html")
-
-
-# ---------------- LEADERBOARD ----------------
-
-@app.route("/leaderboard")
-def leaderboard():
-
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT username, COUNT(*) as solved
-        FROM submissions
-        GROUP BY username
-        ORDER BY solved DESC
-    """)
-
-    leaderboard_data = cursor.fetchall()
-
-    conn.close()
-
-    return render_template("leaderboard.html", leaderboard=leaderboard_data)
-
-
-# ---------------- RUN SERVER ----------------
+# ---------------- RUN ----------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -1,76 +1,34 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>CodeMentor</title>
-
 <link rel="stylesheet" href="/static/style.css">
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
-
 </head>
-
 
 <body>
 
 <div class="sidebar">
-
 <h2>🚀 CodeMentor</h2>
-
-<a href="#" onclick="showPage('dashboard')">Dashboard</a>
-<a href="#" onclick="showPage('practice')">Practice</a>
-<a href="#" onclick="showPage('history')">History</a>
+<a href="/">Dashboard</a>
+<a href="/problems">Problems</a>
 <a href="/leaderboard">Leaderboard</a>
 <a href="/login">Login</a>
 <a href="/signup">Signup</a>
-
 </div>
-
 
 <div class="main">
 
-
-<!-- ================= Dashboard ================= -->
-
-<div id="dashboard" class="page">
-
-<h1>Dashboard</h1>
-
-<div class="card">
-<h3>{{ total_submissions }}</h3>
-<p>Total Submissions</p>
-</div>
-
-<div class="card">
-<h3>{{ problems_solved }}</h3>
-<p>Problems Solved</p>
-</div>
-
-<div class="card">
-<h3>{{ avg_time }} sec</h3>
-<p>Average Time</p>
-</div>
-
-</div>
-
-
-
-<!-- ================= Practice ================= -->
-
-<div id="practice" class="page" style="display:none;">
-
 <h1>{{ problem.title }}</h1>
-
-<p><strong>Difficulty:</strong> {{ problem.difficulty }}</p>
-
+<p><b>Difficulty:</b> {{ problem.difficulty }}</p>
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit">
 
-<div id="editor" style="height:350px;border:1px solid #ccc;"></div>
+<div id="editor" style="height:300px;"></div>
 
 <input type="hidden" name="code" id="code">
+<input type="hidden" name="problem_index" value="0">
 
 <br><br>
 
@@ -78,81 +36,14 @@
 
 <br><br>
 
-<input type="number" name="duration" placeholder="Time taken (seconds)">
-
-<br><br>
-
-<button type="button" onclick="runCode()">Run Code</button>
-
-<button type="submit" onclick="saveCode()">Submit Code</button>
+<button type="button" onclick="runCode()">Run</button>
+<button type="submit" onclick="saveCode()">Submit</button>
 
 </form>
 
-
-<div id="output" style="margin-top:20px;background:#111;color:#fff;padding:10px;border-radius:6px;">
-Output will appear here
-</div>
+<div id="output"></div>
 
 </div>
-
-
-
-<!-- ================= History ================= -->
-
-<div id="history" class="page" style="display:none;">
-
-<h1>Submission History</h1>
-
-<table>
-
-<tr>
-<th>User</th>
-<th>Code</th>
-<th>Duration</th>
-</tr>
-
-{% for sub in submissions %}
-
-<tr>
-<td>{{ sub[1] }}</td>
-<td>{{ sub[2] }}</td>
-<td>{{ sub[3] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-</div>
-
-
-</div>
-
-
-
-<!-- ================= Navigation Script ================= -->
-
-<script>
-
-function showPage(page){
-
-let pages=document.getElementsByClassName("page");
-
-for(let i=0;i<pages.length;i++){
-
-pages[i].style.display="none";
-
-}
-
-document.getElementById(page).style.display="block";
-
-}
-
-</script>
-
-
-
-<!-- ================= Monaco Editor ================= -->
 
 <script>
 
@@ -163,62 +54,32 @@ paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}
 require(["vs/editor/editor.main"],function(){
 
 window.editor=monaco.editor.create(document.getElementById("editor"),{
-
-value:"def find_max(arr):\n    # write your code here\n    pass",
-
+value:"def find_max(arr):\n    pass",
 language:"python",
-
-theme:"vs-dark",
-
-automaticLayout:true
-
+theme:"vs-dark"
 });
 
 });
-
 
 function saveCode(){
-
 document.getElementById("code").value=editor.getValue();
-
 }
-
-</script>
-
-
-
-<!-- ================= Run Code Script ================= -->
-
-<script>
 
 function runCode(){
 
-let code = editor.getValue();
-
-fetch("/run", {
-
+fetch("/run",{
 method:"POST",
-
-headers:{
-"Content-Type":"application/x-www-form-urlencoded"
-},
-
-body:"code="+encodeURIComponent(code)
-
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"code="+encodeURIComponent(editor.getValue())
 })
-
-.then(response=>response.text())
-
+.then(res=>res.text())
 .then(data=>{
-
-document.getElementById("output").innerText="Output: "+data;
-
+document.getElementById("output").innerText=data;
 });
 
 }
 
 </script>
-
 
 </body>
 </html>
