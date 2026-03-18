@@ -94,48 +94,30 @@ def home():
         feedback=""
     )
 
-# ---------------- RUN CODE ----------------
+# ---------------- RUN CODE (FIXED) ----------------
 
 @app.route("/run", methods=["POST"])
 def run_code():
 
     user_code = request.form.get("code")
-    index = request.form.get("problem_index")
-
-    problem = problems[int(index)] if index else problems[0]
-
-    results = []
-    passed = 0
-    total = 0
 
     try:
         local_scope = {}
         exec(user_code, {}, local_scope)
 
-        func_name = problem["function_name"]
+        if len(local_scope) == 0:
+            return "⚠️ No function found. Please define a function."
 
-        if func_name in local_scope:
-            func = local_scope[func_name]
+        func = list(local_scope.values())[0]
 
-            for inp, expected in problem["test_cases"]:
-                total += 1
-                if func(inp) == expected:
-                    results.append("Pass")
-                    passed += 1
-                else:
-                    results.append("Fail")
-
-            for inp, expected in problem["hidden_cases"]:
-                total += 1
-                if func(inp) == expected:
-                    passed += 1
-        else:
-            return "Function not found"
+        try:
+            result = func([3,5,1,8,2])
+            return f"✅ Output: {result}"
+        except:
+            return "⚠️ Function error while executing test case."
 
     except Exception as e:
-        return str(e)
-
-    return f"Results: {results} | Score: {passed}/{total}"
+        return f"❌ Error: {str(e)}"
 
 # ---------------- SUBMIT ----------------
 
@@ -172,7 +154,7 @@ def submit():
 def problems_page():
     return render_template("problems.html", problems=problems)
 
-# ---------------- LEADERBOARD (FIXED) ----------------
+# ---------------- LEADERBOARD ----------------
 
 @app.route("/leaderboard")
 def leaderboard():
@@ -245,7 +227,7 @@ def signup():
 
     return render_template("signup.html")
 
-# ---------------- RUN ----------------
+# ---------------- RUN APP ----------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
