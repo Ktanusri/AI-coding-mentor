@@ -45,6 +45,7 @@ body{
     padding:30px;
     background:linear-gradient(135deg,#667eea,#764ba2);
     color:white;
+    position:relative;
 }
 
 button{
@@ -86,6 +87,16 @@ button:hover{
 <!-- MAIN CONTENT -->
 <div class="main">
 
+<!-- PROFILE TOP RIGHT -->
+<div style="position:absolute; top:20px; right:30px;">
+    {% if username %}
+        <span>👤 {{ username }}</span>
+        <a href="/logout" style="margin-left:10px; color:white;">Logout</a>
+    {% else %}
+        <a href="/login" style="color:white;">Login</a>
+    {% endif %}
+</div>
+
 <h1>{{ problem.title }}</h1>
 
 <p><b>Difficulty:</b> {{ problem.difficulty }}</p>
@@ -103,9 +114,7 @@ button:hover{
 
 <br><br>
 
-<input type="text" name="username" placeholder="Enter Username" required>
-
-<br><br>
+<!-- ❌ username input removed -->
 
 <button type="button" onclick="runCode()">Run Code</button>
 <button type="submit">Submit Code</button>
@@ -113,15 +122,37 @@ button:hover{
 </form>
 
 <!-- OUTPUT -->
+<h3>📊 Result</h3>
+
 <div id="output">
+
     {% if result %}
-        <p><b>Result:</b> {{ result }}</p>
+        {% if "Passed" in result %}
+            <p style="color:lightgreen; font-size:18px;">
+                ✅ <b>{{ result }}</b>
+            </p>
+        {% else %}
+            <p style="color:#ff6b6b; font-size:18px;">
+                ❌ <b>{{ result }}</b>
+            </p>
+        {% endif %}
     {% endif %}
 
     {% if feedback %}
-        <p><b>AI Feedback:</b></p>
-        <p>{{ feedback }}</p>
+        <hr style="margin:15px 0;">
+
+        <p style="color:yellow;"><b>🤖 AI Feedback:</b></p>
+
+        <div style="
+            background:#1e1e1e;
+            padding:10px;
+            border-radius:8px;
+            line-height:1.5;
+        ">
+            {{ feedback }}
+        </div>
     {% endif %}
+
 </div>
 
 </div>
