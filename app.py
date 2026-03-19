@@ -6,7 +6,7 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key="YOUR_NEW_API_KEY_HERE")
 
 # ---------------- DATABASE ----------------
 
@@ -163,16 +163,16 @@ def leaderboard():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT username, COUNT(*) as total
-        FROM submissions
-        GROUP BY username
-        ORDER BY total DESC
+        SELECT username, COUNT(*) as score 
+        FROM submissions 
+        GROUP BY username 
+        ORDER BY score DESC
     """)
 
-    leaderboard_data = cursor.fetchall()
+    data = cursor.fetchall()
     conn.close()
 
-    return render_template("leaderboard.html", leaderboard=leaderboard_data)
+    return render_template("leaderboard.html", data=data)
 
 # ---------------- LOGIN ----------------
 
