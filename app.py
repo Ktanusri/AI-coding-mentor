@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 import sqlite3
 import json
-import os
 from openai import OpenAI
 
 app = Flask(__name__)
@@ -27,7 +26,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
             code TEXT,
-            duration REAL
+            duration REAL,
+            status TEXT
         )
     """)
 
@@ -56,6 +56,36 @@ def get_ai_feedback(code):
     except Exception as e:
         return f"AI error: {str(e)}"
 
+# ---------------- CODE EXECUTION ----------------
+
+def evaluate_code(user_code):
+    try:
+        local_scope = {}
+        exec(user_code, {}, local_scope)
+
+        if len(local_scope) == 0:
+            return "❌ No function found"
+
+        func = list(local_scope.values())[0]
+
+        # Test case
+        test_input = [3, 5, 1, 8, 2]
+        expected_output = 8
+
+        try:
+            result = func(test_input)
+
+            if result == expected_output:
+                return "Passed ✅"
+            else:
+                return f"Failed ❌ (Expected {expected_output}, Got {result})"
+
+        except Exception:
+            return "❌ Error while executing function"
+
+    except Exception as e:
+        return f"❌ Code Error: {str(e)}"
+
 # ---------------- HOME ----------------
 
 @app.route("/")
@@ -68,9 +98,7 @@ def home():
     total_submissions = cursor.fetchone()[0]
 
     cursor.execute("SELECT AVG(duration) FROM submissions")
-    avg_time = cursor.fetchone()[0]
-    if avg_time is None:
-        avg_time = 0
+    avg_time = cursor.fetchone()[0] or 0
 
     cursor.execute("SELECT * FROM submissions")
     submissions = cursor.fetchall()
@@ -94,7 +122,7 @@ def home():
         feedback=""
     )
 
-# ---------------- RUN CODE (FIXED) ----------------
+# ---------------- RUN CODE ----------------
 
 @app.route("/run", methods=["POST"])
 def run_code():
@@ -106,20 +134,17 @@ def run_code():
         exec(user_code, {}, local_scope)
 
         if len(local_scope) == 0:
-            return "⚠️ No function found. Please define a function."
+            return "⚠️ No function found."
 
         func = list(local_scope.values())[0]
+        result = func([3,5,1,8,2])
 
-        try:
-            result = func([3,5,1,8,2])
-            return f"✅ Output: {result}"
-        except:
-            return "⚠️ Function error while executing test case."
+        return f"✅ Output: {result}"
 
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
-# ---------------- SUBMIT ----------------
+# ---------------- SUBMIT (FIXED 🔥) ----------------
 
 @app.route("/submit", methods=["POST"])
 def submit():
@@ -128,14 +153,18 @@ def submit():
     duration = request.form.get("duration")
     username = request.form.get("username", "guest")
 
+    # 🔥 Evaluate code
+    status = evaluate_code(user_code)
+
+    # 🔥 AI Feedback
     feedback = get_ai_feedback(user_code)
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO submissions (username, code, duration) VALUES (?, ?, ?)",
-        (username, user_code, duration)
+        "INSERT INTO submissions (username, code, duration, status) VALUES (?, ?, ?, ?)",
+        (username, user_code, duration, status)
     )
 
     conn.commit()
@@ -144,6 +173,7 @@ def submit():
     return render_template(
         "index.html",
         feedback=feedback,
+        result=status,
         problem=problems[0],
         problems=problems
     )
@@ -230,4 +260,4 @@ def signup():
 # ---------------- RUN APP ----------------
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)

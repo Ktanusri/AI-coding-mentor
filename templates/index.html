@@ -74,7 +74,6 @@ button:hover{
 
 <!-- SIDEBAR -->
 <div class="sidebar">
-
 <h2>🚀 CodeMentor</h2>
 
 <a href="/">Dashboard</a>
@@ -82,7 +81,6 @@ button:hover{
 <a href="/leaderboard">Leaderboard</a>
 <a href="/login">Login</a>
 <a href="/signup">Signup</a>
-
 </div>
 
 <!-- MAIN CONTENT -->
@@ -96,7 +94,7 @@ button:hover{
 
 <p style="color:yellow;">⚠️ Currently supports Python only</p>
 
-<form method="POST" action="/submit">
+<form method="POST" action="/submit" onsubmit="saveCode()">
 
 <div id="editor" style="height:350px;border:1px solid #ccc;"></div>
 
@@ -110,12 +108,21 @@ button:hover{
 <br><br>
 
 <button type="button" onclick="runCode()">Run Code</button>
-<button type="submit" onclick="saveCode()">Submit Code</button>
+<button type="submit">Submit Code</button>
 
 </form>
 
 <!-- OUTPUT -->
-<div id="output">Output will appear here...</div>
+<div id="output">
+    {% if result %}
+        <p><b>Result:</b> {{ result }}</p>
+    {% endif %}
+
+    {% if feedback %}
+        <p><b>AI Feedback:</b></p>
+        <p>{{ feedback }}</p>
+    {% endif %}
+</div>
 
 </div>
 
@@ -143,9 +150,7 @@ automaticLayout:true
 });
 
 function saveCode(){
-
-document.getElementById("code").value=editor.getValue();
-
+    document.getElementById("code").value=editor.getValue();
 }
 
 function runCode(){
