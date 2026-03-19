@@ -56,7 +56,7 @@ def get_ai_feedback(code):
     except Exception as e:
         return f"AI error: {str(e)}"
 
-# ---------------- CODE EXECUTION ----------------
+# ---------------- CODE EXECUTION (UPDATED 🔥) ----------------
 
 def evaluate_code(user_code):
     try:
@@ -68,20 +68,24 @@ def evaluate_code(user_code):
 
         func = list(local_scope.values())[0]
 
-        # Test case
-        test_input = [3, 5, 1, 8, 2]
-        expected_output = 8
+        # 🔥 Multiple test cases
+        test_cases = [
+            ([3, 5, 1, 8, 2], 8),
+            ([1, 2, 3], 3),
+            ([9, 7, 5], 9),
+            ([10], 10)
+        ]
 
-        try:
-            result = func(test_input)
+        for inp, expected in test_cases:
+            try:
+                result = func(inp)
+            except Exception:
+                return f"❌ Error on input {inp}"
 
-            if result == expected_output:
-                return "Passed ✅"
-            else:
-                return f"Failed ❌ (Expected {expected_output}, Got {result})"
+            if result != expected:
+                return f"Failed ❌ (Input: {inp}, Expected: {expected}, Got: {result})"
 
-        except Exception:
-            return "❌ Error while executing function"
+        return "Passed ✅"
 
     except Exception as e:
         return f"❌ Code Error: {str(e)}"
@@ -144,7 +148,7 @@ def run_code():
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
-# ---------------- SUBMIT (FIXED 🔥) ----------------
+# ---------------- SUBMIT ----------------
 
 @app.route("/submit", methods=["POST"])
 def submit():
@@ -153,10 +157,10 @@ def submit():
     duration = request.form.get("duration")
     username = request.form.get("username", "guest")
 
-    # 🔥 Evaluate code
+    # 🔥 Evaluate code (multi test)
     status = evaluate_code(user_code)
 
-    # 🔥 AI Feedback
+    # 🔥 AI feedback
     feedback = get_ai_feedback(user_code)
 
     conn = sqlite3.connect("database.db")
