@@ -3,69 +3,99 @@
 <head>
 <title>CodeMentor</title>
 
-<link rel="stylesheet" href="/static/style.css">
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
 
 <style>
 body{
     margin:0;
-    font-family: Arial;
-    display:flex;
-}
-
-.sidebar{
-    width:220px;
-    background:black;
+    font-family: 'Segoe UI', sans-serif;
+    background:#0f172a;
     color:white;
-    height:100vh;
-    padding:20px;
 }
 
-.sidebar h2{
-    text-align:center;
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 30px;
+    background:#020617;
+    border-bottom:1px solid #1e293b;
 }
 
-.sidebar a{
+/* PROFILE ICON */
+.profile{
+    position:relative;
+    cursor:pointer;
+}
+
+.profile-circle{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:#9333ea;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+}
+
+/* DROPDOWN */
+.dropdown{
+    display:none;
+    position:absolute;
+    right:0;
+    top:50px;
+    background:#1e293b;
+    border-radius:8px;
+    padding:10px;
+    min-width:150px;
+}
+
+.dropdown a{
     display:block;
-    padding:12px;
-    margin:10px 0;
-    background:#1e1e1e;
+    padding:8px;
     color:white;
     text-decoration:none;
-    border-radius:8px;
 }
 
-.sidebar a:hover{
-    background:#ff6b6b;
+.dropdown a:hover{
+    background:#334155;
 }
 
+/* MAIN */
 .main{
-    flex:1;
-    padding:30px;
-    background:linear-gradient(135deg,#667eea,#764ba2);
-    color:white;
-    position:relative;
+    padding:40px;
 }
 
+/* EDITOR */
+#editor{
+    height:350px;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+/* BUTTONS */
 button{
     padding:10px 20px;
     border:none;
     border-radius:8px;
-    background:#ff6b6b;
+    background:#6366f1;
     color:white;
     cursor:pointer;
 }
 
 button:hover{
-    background:#ff4b4b;
+    background:#4f46e5;
 }
 
+/* OUTPUT */
 #output{
     margin-top:20px;
-    background:black;
+    background:#020617;
     padding:15px;
-    border-radius:8px;
+    border-radius:10px;
+    border:1px solid #1e293b;
 }
 </style>
 
@@ -73,29 +103,35 @@ button:hover{
 
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
+<!-- NAVBAR -->
+<div class="navbar">
+
 <h2>🚀 CodeMentor</h2>
 
-<a href="/">Dashboard</a>
-<a href="/problems">Problems</a>
-<a href="/leaderboard">Leaderboard</a>
-<a href="/login">Login</a>
-<a href="/signup">Signup</a>
+<div class="profile" onclick="toggleDropdown()">
+
+    <!-- PROFILE ICON -->
+    <div class="profile-circle">
+        {{ username[0]|upper if username else "G" }}
+    </div>
+
+    <!-- DROPDOWN -->
+    <div id="dropdown" class="dropdown">
+        {% if username %}
+            <p style="padding:8px;">👤 {{ username }}</p>
+            <a href="/logout">Logout</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/signup">Signup</a>
+        {% endif %}
+    </div>
+
 </div>
 
-<!-- MAIN CONTENT -->
+</div>
+
+<!-- MAIN -->
 <div class="main">
-
-<!-- PROFILE TOP RIGHT -->
-<div style="position:absolute; top:20px; right:30px;">
-    {% if username %}
-        <span>👤 {{ username }}</span>
-        <a href="/logout" style="margin-left:10px; color:white;">Logout</a>
-    {% else %}
-        <a href="/login" style="color:white;">Login</a>
-    {% endif %}
-</div>
 
 <h1>{{ problem.title }}</h1>
 
@@ -103,18 +139,13 @@ button:hover{
 
 <p>{{ problem.description }}</p>
 
-<p style="color:yellow;">⚠️ Currently supports Python only</p>
-
 <form method="POST" action="/submit" onsubmit="saveCode()">
 
-<div id="editor" style="height:350px;border:1px solid #ccc;"></div>
+<div id="editor"></div>
 
 <input type="hidden" name="code" id="code">
-<input type="hidden" name="problem_index" value="0">
 
 <br><br>
-
-<!-- ❌ username input removed -->
 
 <button type="button" onclick="runCode()">Run Code</button>
 <button type="submit">Submit Code</button>
@@ -122,70 +153,45 @@ button:hover{
 </form>
 
 <!-- OUTPUT -->
-<h3>📊 Result</h3>
-
 <div id="output">
 
-    {% if result %}
-        {% if "Passed" in result %}
-            <p style="color:lightgreen; font-size:18px;">
-                ✅ <b>{{ result }}</b>
-            </p>
-        {% else %}
-            <p style="color:#ff6b6b; font-size:18px;">
-                ❌ <b>{{ result }}</b>
-            </p>
-        {% endif %}
+{% if result %}
+    {% if "Passed" in result %}
+        <p style="color:#22c55e;">✅ {{ result }}</p>
+    {% else %}
+        <p style="color:#ef4444;">❌ {{ result }}</p>
     {% endif %}
+{% endif %}
 
-    {% if feedback %}
-        <hr style="margin:15px 0;">
-
-        <p style="color:yellow;"><b>🤖 AI Feedback:</b></p>
-
-        <div style="
-            background:#1e1e1e;
-            padding:10px;
-            border-radius:8px;
-            line-height:1.5;
-        ">
-            {{ feedback }}
-        </div>
-    {% endif %}
+{% if feedback %}
+    <hr>
+    <p style="color:#facc15;">🤖 Feedback:</p>
+    <p>{{ feedback }}</p>
+{% endif %}
 
 </div>
 
 </div>
 
-<!-- MONACO EDITOR -->
+<!-- MONACO -->
 <script>
-
 require.config({
 paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}
 });
 
 require(["vs/editor/editor.main"],function(){
-
 window.editor=monaco.editor.create(document.getElementById("editor"),{
-
-value:"def find_max(arr):\n    # write your code here\n    pass",
-
+value:"def find_max(arr):\n    return max(arr)",
 language:"python",
-
-theme:"vs-dark",
-
-automaticLayout:true
-
+theme:"vs-dark"
 });
-
 });
 
 function saveCode(){
-    document.getElementById("code").value=editor.getValue();
+document.getElementById("code").value=editor.getValue();
 }
 
 function runCode(){
-
 fetch("/run",{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
@@ -195,9 +201,13 @@ body:"code="+encodeURIComponent(editor.getValue())
 .then(data=>{
 document.getElementById("output").innerText=data;
 });
-
 }
 
+/* DROPDOWN TOGGLE */
+function toggleDropdown(){
+let d = document.getElementById("dropdown");
+d.style.display = d.style.display === "block" ? "none" : "block";
+}
 </script>
 
 </body>
