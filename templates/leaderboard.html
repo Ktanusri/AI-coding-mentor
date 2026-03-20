@@ -26,6 +26,20 @@
 {% endfor %}
 
 </table>
+<table>
+<tr>
+    <th>Rank</th>
+    <th>Username</th>
+    <th>Score</th>
+</tr>
 
+{% for row in data %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ row[0] }}</td>
+    <td>{{ row[1] }}</td>
+</tr>
+{% endfor %}
+</table>
 </body>
 </html>

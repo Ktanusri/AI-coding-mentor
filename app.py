@@ -175,9 +175,10 @@ def leaderboard():
 
     cursor.execute("""
         SELECT username, COUNT(*) as score 
-        FROM submissions 
-        GROUP BY username 
-        ORDER BY score DESC
+FROM submissions 
+WHERE status = 'Passed ✅'
+GROUP BY username 
+ORDER BY score DESC
     """)
 
     data = cursor.fetchall()
