@@ -46,22 +46,19 @@ def get_ai_feedback(code):
 
 # ---------------- CODE EXECUTION ----------------
 
-def evaluate_code(user_code):
+def evaluate_code(user_code, problem):
     try:
         local_scope = {}
         exec(user_code, {}, local_scope)
 
-        if len(local_scope) == 0:
-            return "❌ No function found"
+        func_name = problem["function_name"]
 
-        func = list(local_scope.values())[0]
+        if func_name not in local_scope:
+            return f"❌ Function '{func_name}' not found"
 
-        test_cases = [
-            ([3, 5, 1, 8, 2], 8),
-            ([1, 2, 3], 3),
-            ([9, 7, 5], 9),
-            ([10], 10)
-        ]
+        func = local_scope[func_name]
+
+        test_cases = problem["test_cases"] + problem["hidden_cases"]
 
         for inp, expected in test_cases:
             try:
@@ -82,35 +79,16 @@ def evaluate_code(user_code):
 @app.route("/")
 def home():
 
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
+    index = request.args.get("problem", 0)
+    index = int(index)
 
-    cursor.execute("SELECT COUNT(*) FROM submissions")
-    total_submissions = cursor.fetchone()[0]
-
-    cursor.execute("SELECT AVG(duration) FROM submissions")
-    avg_time = cursor.fetchone()[0] or 0
-
-    cursor.execute("SELECT * FROM submissions")
-    submissions = cursor.fetchall()
-
-    conn.close()
-
-    index = request.args.get("problem")
-    if index:
-        problem = problems[int(index)]
-    else:
-        problem = problems[0]
+    problem = problems[index]
 
     return render_template(
         "index.html",
         problem=problem,
         problems=problems,
-        submissions=submissions,
-        total_submissions=total_submissions,
-        avg_time=round(avg_time, 2),
-        problems_solved=total_submissions,
-        feedback="",
+        current_index=index,
         username=session.get("username")
     )
 
@@ -120,16 +98,19 @@ def home():
 def run_code():
 
     user_code = request.form.get("code")
+    index = int(request.form.get("problem_index", 0))
+    problem = problems[index]
 
     try:
         local_scope = {}
         exec(user_code, {}, local_scope)
 
-        if len(local_scope) == 0:
-            return "⚠️ No function found."
+        func = local_scope.get(problem["function_name"])
 
-        func = list(local_scope.values())[0]
-        result = func([3,5,1,8,2])
+        if not func:
+            return "⚠️ Function not found"
+
+        result = func(problem["test_cases"][0][0])
 
         return f"✅ Output: {result}"
 
@@ -142,12 +123,12 @@ def run_code():
 def submit():
 
     user_code = request.form.get("code")
-    duration = request.form.get("duration")
+    index = int(request.form.get("problem_index", 0))
+    problem = problems[index]
 
-    # 🔥 session username
     username = session.get("username", "guest")
 
-    status = evaluate_code(user_code)
+    status = evaluate_code(user_code, problem)
     feedback = get_ai_feedback(user_code)
 
     conn = sqlite3.connect("database.db")
@@ -155,7 +136,7 @@ def submit():
 
     cursor.execute(
         "INSERT INTO submissions (username, code, duration, status) VALUES (?, ?, ?, ?)",
-        (username, user_code, duration, status)
+        (username, user_code, 0, status)
     )
 
     conn.commit()
@@ -163,10 +144,11 @@ def submit():
 
     return render_template(
         "index.html",
-        feedback=feedback,
-        result=status,
-        problem=problems[0],
+        problem=problem,
         problems=problems,
+        current_index=index,
+        result=status,
+        feedback=feedback,
         username=username
     )
 
@@ -254,8 +236,5 @@ def signup():
 
 # ---------------- RUN APP ----------------
 
-import os
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)

@@ -23,7 +23,7 @@ body{
     border-bottom:1px solid #1e293b;
 }
 
-/* PROFILE ICON */
+/* PROFILE */
 .profile{
     position:relative;
     cursor:pointer;
@@ -68,14 +68,20 @@ body{
     padding:40px;
 }
 
+/* SELECT */
+select{
+    padding:8px;
+    border-radius:6px;
+    margin-bottom:15px;
+}
+
 /* EDITOR */
 #editor{
     height:350px;
     border-radius:10px;
-    overflow:hidden;
 }
 
-/* BUTTONS */
+/* BUTTON */
 button{
     padding:10px 20px;
     border:none;
@@ -98,45 +104,46 @@ button:hover{
     border:1px solid #1e293b;
 }
 </style>
-
 </head>
 
 <body>
 
 <!-- NAVBAR -->
 <div class="navbar">
+    <h2>🚀 CodeMentor</h2>
 
-<h2>🚀 CodeMentor</h2>
+    <div class="profile" onclick="toggleDropdown()">
+        <div class="profile-circle">
+            {{ username[0]|upper if username else "G" }}
+        </div>
 
-<div class="profile" onclick="toggleDropdown()">
-
-    <!-- PROFILE ICON -->
-    <div class="profile-circle">
-        {{ username[0]|upper if username else "G" }}
+        <div id="dropdown" class="dropdown">
+            {% if username %}
+                <p style="padding:8px;">👤 {{ username }}</p>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/signup">Signup</a>
+            {% endif %}
+        </div>
     </div>
-
-    <!-- DROPDOWN -->
-    <div id="dropdown" class="dropdown">
-        {% if username %}
-            <p style="padding:8px;">👤 {{ username }}</p>
-            <a href="/logout">Logout</a>
-        {% else %}
-            <a href="/login">Login</a>
-            <a href="/signup">Signup</a>
-        {% endif %}
-    </div>
-
-</div>
-
 </div>
 
 <!-- MAIN -->
 <div class="main">
 
+<!-- PROBLEM SELECT -->
+<select onchange="changeProblem(this.value)">
+    {% for p in problems %}
+        <option value="{{ loop.index0 }}" {% if loop.index0 == current_index %}selected{% endif %}>
+            {{ p.title }}
+        </option>
+    {% endfor %}
+</select>
+
 <h1>{{ problem.title }}</h1>
 
 <p><b>Difficulty:</b> {{ problem.difficulty }}</p>
-
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit" onsubmit="saveCode()">
@@ -144,6 +151,7 @@ button:hover{
 <div id="editor"></div>
 
 <input type="hidden" name="code" id="code">
+<input type="hidden" name="problem_index" id="problem_index" value="{{ current_index }}">
 
 <br><br>
 
@@ -173,8 +181,9 @@ button:hover{
 
 </div>
 
-<!-- MONACO -->
+<!-- SCRIPTS -->
 <script>
+
 require.config({
 paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}
 });
@@ -187,15 +196,11 @@ theme:"vs-dark"
 });
 });
 
-function saveCode(){
-document.getElementById("code").value=editor.getValue();
-}
-
 function runCode(){
 fetch("/run",{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"code="+encodeURIComponent(editor.getValue())
+body:"code="+encodeURIComponent(editor.getValue()) + "&problem_index=" + document.getElementById("problem_index").value
 })
 .then(res=>res.text())
 .then(data=>{
@@ -203,11 +208,19 @@ document.getElementById("output").innerText=data;
 });
 }
 
-/* DROPDOWN TOGGLE */
+function saveCode(){
+document.getElementById("code").value = editor.getValue();
+}
+
+function changeProblem(index){
+window.location.href = "/?problem=" + index;
+}
+
 function toggleDropdown(){
 let d = document.getElementById("dropdown");
 d.style.display = d.style.display === "block" ? "none" : "block";
 }
+
 </script>
 
 </body>
