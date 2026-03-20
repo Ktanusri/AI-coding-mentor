@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect
 import sqlite3
 import json
 
 app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
 # ---------------- DATABASE ----------------
 
@@ -38,7 +39,7 @@ init_db()
 with open("problems.json") as f:
     problems = json.load(f)
 
-# ---------------- AI FEEDBACK (DISABLED) ----------------
+# ---------------- AI FEEDBACK ----------------
 
 def get_ai_feedback(code):
     return "💡 AI feedback coming soon!"
@@ -109,7 +110,8 @@ def home():
         total_submissions=total_submissions,
         avg_time=round(avg_time, 2),
         problems_solved=total_submissions,
-        feedback=""
+        feedback="",
+        username=session.get("username")
     )
 
 # ---------------- RUN CODE ----------------
@@ -141,7 +143,9 @@ def submit():
 
     user_code = request.form.get("code")
     duration = request.form.get("duration")
-    username = request.form.get("username", "guest")
+
+    # 🔥 session username
+    username = session.get("username", "guest")
 
     status = evaluate_code(user_code)
     feedback = get_ai_feedback(user_code)
@@ -162,7 +166,8 @@ def submit():
         feedback=feedback,
         result=status,
         problem=problems[0],
-        problems=problems
+        problems=problems,
+        username=username
     )
 
 # ---------------- LEADERBOARD ----------------
@@ -175,10 +180,10 @@ def leaderboard():
 
     cursor.execute("""
         SELECT username, COUNT(*) as score 
-FROM submissions 
-WHERE status = 'Passed ✅'
-GROUP BY username 
-ORDER BY score DESC
+        FROM submissions 
+        WHERE status = 'Passed ✅'
+        GROUP BY username 
+        ORDER BY score DESC
     """)
 
     data = cursor.fetchall()
@@ -208,11 +213,19 @@ def login():
         conn.close()
 
         if user:
-            return "Login successful!"
+            session["username"] = username
+            return redirect("/")
         else:
             return "Invalid credentials"
 
     return render_template("login.html")
+
+# ---------------- LOGOUT ----------------
+
+@app.route("/logout")
+def logout():
+    session.pop("username", None)
+    return redirect("/")
 
 # ---------------- SIGNUP ----------------
 
@@ -235,7 +248,7 @@ def signup():
         conn.commit()
         conn.close()
 
-        return "Signup successful!"
+        return redirect("/login")
 
     return render_template("signup.html")
 
