@@ -1,11 +1,8 @@
 from flask import Flask, render_template, request
 import sqlite3
 import json
-from openai import OpenAI
 
 app = Flask(__name__)
-
-client = OpenAI(api_key="YOUR_NEW_API_KEY_HERE")
 
 # ---------------- DATABASE ----------------
 
@@ -41,22 +38,12 @@ init_db()
 with open("problems.json") as f:
     problems = json.load(f)
 
-# ---------------- AI FEEDBACK ----------------
+# ---------------- AI FEEDBACK (DISABLED) ----------------
 
 def get_ai_feedback(code):
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {"role": "system", "content": "You are a coding mentor."},
-                {"role": "user", "content": f"Review this Python code:\n{code}"}
-            ]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"AI error: {str(e)}"
+    return "💡 AI feedback coming soon!"
 
-# ---------------- CODE EXECUTION (UPDATED 🔥) ----------------
+# ---------------- CODE EXECUTION ----------------
 
 def evaluate_code(user_code):
     try:
@@ -68,7 +55,6 @@ def evaluate_code(user_code):
 
         func = list(local_scope.values())[0]
 
-        # 🔥 Multiple test cases
         test_cases = [
             ([3, 5, 1, 8, 2], 8),
             ([1, 2, 3], 3),
@@ -157,10 +143,7 @@ def submit():
     duration = request.form.get("duration")
     username = request.form.get("username", "guest")
 
-    # 🔥 Evaluate code (multi test)
     status = evaluate_code(user_code)
-
-    # 🔥 AI feedback
     feedback = get_ai_feedback(user_code)
 
     conn = sqlite3.connect("database.db")
@@ -181,12 +164,6 @@ def submit():
         problem=problems[0],
         problems=problems
     )
-
-# ---------------- PROBLEMS ----------------
-
-@app.route("/problems")
-def problems_page():
-    return render_template("problems.html", problems=problems)
 
 # ---------------- LEADERBOARD ----------------
 
