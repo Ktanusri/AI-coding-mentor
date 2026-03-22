@@ -115,6 +115,8 @@ def hint():
 
 # ---------------- EVALUATE ----------------
 
+# ---------------- EVALUATE ----------------
+
 def evaluate_code(user_code, problem):
     try:
         local_scope = {}
@@ -126,9 +128,18 @@ def evaluate_code(user_code, problem):
             return "❌ Function not found"
 
         for inp, expected in problem["test_cases"] + problem["hidden_cases"]:
-            result = func(inp)
+            try:
+                result = func(inp)
+            except Exception as e:
+                return f"❌ Runtime Error on input {inp}: {str(e)}"
+
             if result != expected:
-                return f"Failed ❌ (Input: {inp}, Expected: {expected}, Got: {result})"
+                return (
+                    f"❌ Failed\n"
+                    f"Input: {inp}\n"
+                    f"Your Output: {result}\n"
+                    f"Expected: {expected}"
+                )
 
         return "Passed ✅"
 
