@@ -26,5 +26,65 @@
       [[0], 0],
       [[10, 10], 20]
     ]
+  },
+  {
+    "title": "Reverse List",
+    "description": "Return reversed list",
+    "difficulty": "Easy",
+    "function_name": "reverse_list",
+    "test_cases": [
+      [[1, 2, 3], [3, 2, 1]]
+    ],
+    "hidden_cases": [
+      [[5], [5]]
+    ]
+  },
+  {
+    "title": "Find Minimum",
+    "description": "Return minimum value from list",
+    "difficulty": "Easy",
+    "function_name": "find_min",
+    "test_cases": [
+      [[3, 1, 2], 1]
+    ],
+    "hidden_cases": [
+      [[5], 5]
+    ]
+  },
+  {
+    "title": "Sum of Even Numbers",
+    "description": "Return sum of even numbers in list",
+    "difficulty": "Medium",
+    "function_name": "sum_even",
+    "test_cases": [
+      [[1, 2, 3, 4], 6]
+    ],
+    "hidden_cases": [
+      [[2, 2, 2], 6]
+    ]
+  },
+  {
+    "title": "Check Palindrome",
+    "description": "Check if string is palindrome",
+    "difficulty": "Medium",
+    "function_name": "is_palindrome",
+    "test_cases": [
+      [["madam"], true]
+    ],
+    "hidden_cases": [
+      [["hello"], false]
+    ]
+  },
+  {
+    "title": "Count Vowels",
+    "description": "Count vowels in a string",
+    "difficulty": "Easy",
+    "function_name": "count_vowels",
+    "test_cases": [
+      [["hello"], 2]
+    ],
+    "hidden_cases": [
+      [["aeiou"], 5]
+    ]
   }
 ]
