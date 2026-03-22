@@ -8,27 +8,27 @@
 <style>
 body{
     margin:0;
-    font-family:'Segoe UI',sans-serif;
+    font-family:'Segoe UI';
     background:linear-gradient(135deg,#0f172a,#1e293b);
     color:white;
+    animation:fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(20px);}
+    to{opacity:1;transform:translateY(0);}
 }
 
 /* NAVBAR */
 .navbar{
     display:flex;
     justify-content:space-between;
-    align-items:center;
     padding:15px 30px;
     background:rgba(0,0,0,0.3);
-    backdrop-filter: blur(10px);
+    backdrop-filter:blur(10px);
 }
 
-/* PROFILE */
-.profile{
-    font-weight:bold;
-}
-
-/* MAIN CARD */
+/* MAIN */
 .main{
     max-width:900px;
     margin:40px auto;
@@ -39,38 +39,7 @@ body{
     box-shadow:0 8px 32px rgba(0,0,0,0.4);
 }
 
-/* FILTERS */
-.filters{
-    margin-bottom:20px;
-}
-
-select{
-    padding:8px;
-    border-radius:6px;
-    margin-right:10px;
-    background:#1e293b;
-    color:white;
-    border:none;
-}
-
-/* PROBLEM */
-h2{
-    margin-bottom:10px;
-}
-
-/* EDITOR */
-#editor{
-    height:350px;
-    border-radius:10px;
-    overflow:hidden;
-    border:1px solid #334155;
-}
-
 /* BUTTONS */
-.buttons{
-    margin-top:15px;
-}
-
 button{
     padding:10px 18px;
     margin-right:10px;
@@ -79,12 +48,19 @@ button{
     background:#6366f1;
     color:white;
     cursor:pointer;
-    transition:0.2s;
+    transition:0.3s;
 }
 
 button:hover{
     background:#4f46e5;
-    transform:scale(1.05);
+    transform:scale(1.1);
+}
+
+/* EDITOR */
+#editor{
+    height:350px;
+    border-radius:10px;
+    border:1px solid #334155;
 }
 
 /* OUTPUT */
@@ -93,56 +69,52 @@ button:hover{
     padding:15px;
     border-radius:10px;
     background:#020617;
-    border:1px solid #1e293b;
 }
 
-/* STATS */
-.stats{
-    margin-top:10px;
-    font-size:14px;
-    color:#94a3b8;
+/* SUCCESS / ERROR */
+.success{
+    color:#22c55e;
+    font-weight:bold;
+}
+.error{
+    color:#ef4444;
+    font-weight:bold;
+}
+
+/* HINT POPUP */
+#hintBox{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:#1e293b;
+    padding:15px;
+    border-radius:10px;
+    display:none;
+    animation:fadeIn 0.5s;
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
-    <h2>🚀 CodeMentor</h2>
-
-    <div class="profile">
-        {% if username %}
-            👤 {{ username }} | <a href="/logout" style="color:white;">Logout</a>
-        {% else %}
-            <a href="/login" style="color:white;">Login</a>
-            <a href="/signup" style="color:white;">Signup</a>
-        {% endif %}
-    </div>
+<h2>🚀 CodeMentor</h2>
+<div>
+{% if username %}
+👤 {{ username }} | <a href="/logout" style="color:white;">Logout</a>
+{% else %}
+<a href="/login">Login</a>
+<a href="/signup">Signup</a>
+{% endif %}
+</div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
-<div class="stats">
+<p>
 📊 Solved: {{ solved }} | Attempts: {{ total }} | Accuracy: {{ accuracy }}%  
-🔥 Streak: {{ streak }} days
-</div>
-
-<!-- FILTERS -->
-<div class="filters">
-<select onchange="changeDifficulty(this.value)">
-    <option value="All">All</option>
-    <option value="Easy">Easy</option>
-    <option value="Medium">Medium</option>
-</select>
-
-<select onchange="changeCategory(this.value)">
-    <option value="All">All</option>
-    <option value="Array">Array</option>
-    <option value="String">String</option>
-</select>
-</div>
+🔥 Streak: {{ streak }}
+</p>
 
 <h2>{{ problem.title }}</h2>
 <p>{{ problem.description }}</p>
@@ -154,21 +126,28 @@ button:hover{
 <input type="hidden" name="code" id="code">
 <input type="hidden" name="problem_index" value="{{ current_index }}">
 
-<div class="buttons">
+<br><br>
+
 <button type="button" onclick="runCode()">Run</button>
 <button type="button" onclick="getHint()">💡 Hint</button>
 <button type="submit">Submit</button>
-</div>
 
 </form>
 
 <div id="output">
 {% if result %}
-<p>{{ result }}</p>
+    {% if "Passed" in result %}
+        <p class="success">✅ {{ result }}</p>
+    {% else %}
+        <p class="error">{{ result }}</p>
+    {% endif %}
 {% endif %}
 </div>
 
 </div>
+
+<!-- HINT POPUP -->
+<div id="hintBox"></div>
 
 <script>
 
@@ -194,7 +173,9 @@ body:"code="+encodeURIComponent(editor.getValue())+
 "&problem_index="+document.querySelector('[name=problem_index]').value
 })
 .then(res=>res.text())
-.then(data=>document.getElementById("output").innerText=data);
+.then(data=>{
+document.getElementById("output").innerText=data;
+});
 }
 
 function getHint(){
@@ -205,15 +186,13 @@ body:"code="+encodeURIComponent(editor.getValue())+
 "&problem_index="+document.querySelector('[name=problem_index]').value
 })
 .then(res=>res.text())
-.then(data=>document.getElementById("output").innerText=data);
-}
+.then(data=>{
+let box=document.getElementById("hintBox");
+box.innerText=data;
+box.style.display="block";
 
-function changeDifficulty(d){
-window.location.href="/?difficulty="+d;
-}
-
-function changeCategory(c){
-window.location.href="/?category="+c;
+setTimeout(()=>{box.style.display="none";},4000);
+});
 }
 
 </script>
