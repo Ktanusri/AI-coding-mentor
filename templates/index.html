@@ -84,6 +84,7 @@ select{
 <br><br>
 
 <button type="button" onclick="runCode()">Run</button>
+<button type="button" onclick="getHint()">💡 Get Hint</button>
 <button type="submit">Submit</button>
 
 </form>
@@ -134,6 +135,30 @@ window.location.href="/?category="+cat;
 }
 
 </script>
+<script>
 
+function saveCode(){
+    document.getElementById("code").value=editor.getValue();
+}
+
+function runCode(){
+    // existing code
+}
+
+/* 🔥 ADD BELOW */
+function getHint(){
+fetch("/hint",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"code="+encodeURIComponent(editor.getValue())+
+"&problem_index="+document.querySelector('[name=problem_index]').value
+})
+.then(res=>res.text())
+.then(data=>{
+document.getElementById("output").innerText=data;
+});
+}
+
+</script>
 </body>
 </html>

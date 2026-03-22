@@ -10,6 +10,27 @@ app.secret_key = "supersecretkey"
 with open("problems.json") as f:
     all_problems = json.load(f)
 
+# ---------------- AI HINT SYSTEM ----------------
+
+def get_hint(code, problem):
+
+    if problem["function_name"] not in code:
+        return f"💡 Define function '{problem['function_name']}' first"
+
+    if "for" not in code and "while" not in code:
+        return "💡 Try using a loop"
+
+    if "max" in problem["title"].lower() and "max(" not in code:
+        return "💡 Python has built-in max() function"
+
+    if "sum" in problem["title"].lower() and "sum(" not in code:
+        return "💡 Try using sum() function"
+
+    if "return" not in code:
+        return "💡 Don't forget to return the result"
+
+    return "✅ Good approach! Try handling edge cases."
+
 # ---------------- HOME ----------------
 
 @app.route("/")
@@ -20,11 +41,9 @@ def home():
 
     problems = all_problems
 
-    # filter by difficulty
     if difficulty != "All":
         problems = [p for p in problems if p["difficulty"] == difficulty]
 
-    # filter by category
     if category != "All":
         problems = [p for p in problems if p.get("category", "General") == category]
 
@@ -81,6 +100,19 @@ def run_code():
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
+# ---------------- HINT ROUTE ----------------
+
+@app.route("/hint", methods=["POST"])
+def hint():
+    code = request.form.get("code")
+    index = int(request.form.get("problem_index", 0))
+
+    problem = all_problems[index]
+
+    hint = get_hint(code, problem)
+
+    return hint
+
 # ---------------- EVALUATE ----------------
 
 def evaluate_code(user_code, problem):
@@ -110,18 +142,8 @@ def submit():
 
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
-    difficulty = request.form.get("difficulty", "All")
-    category = request.form.get("category", "All")
 
-    problems = all_problems
-
-    if difficulty != "All":
-        problems = [p for p in problems if p["difficulty"] == difficulty]
-
-    if category != "All":
-        problems = [p for p in problems if p.get("category", "General") == category]
-
-    problem = problems[index]
+    problem = all_problems[index]
 
     username = session.get("username", "guest")
 
@@ -129,14 +151,12 @@ def submit():
 
     if status == "Passed ✅":
         next_index = index + 1
-        if next_index >= len(problems):
+        if next_index >= len(all_problems):
             return render_template(
                 "index.html",
                 problem=problem,
-                problems=problems,
+                problems=all_problems,
                 current_index=index,
-                difficulty=difficulty,
-                category=category,
                 result="🎉 All problems completed!",
                 username=username
             )
@@ -145,11 +165,9 @@ def submit():
 
     return render_template(
         "index.html",
-        problem=problems[next_index],
-        problems=problems,
+        problem=all_problems[next_index],
+        problems=all_problems,
         current_index=next_index,
-        difficulty=difficulty,
-        category=category,
         result=status,
         username=username
     )
@@ -158,24 +176,9 @@ def submit():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        conn = sqlite3.connect("database.db")
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        user = cursor.fetchone()
-        conn.close()
-
-        if user:
-            session["username"] = username
-            return redirect("/")
-        else:
-            return "Invalid credentials"
-
+        session["username"] = request.form["username"]
+        return redirect("/")
     return render_template("login.html")
 
 @app.route("/logout")
@@ -183,22 +186,8 @@ def logout():
     session.pop("username", None)
     return redirect("/")
 
-@app.route("/signup", methods=["GET", "POST"])
+@app.route("/signup")
 def signup():
-
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        conn = sqlite3.connect("database.db")
-        cursor = conn.cursor()
-
-        cursor.execute("INSERT INTO users (username,password) VALUES (?,?)", (username, password))
-        conn.commit()
-        conn.close()
-
-        return redirect("/login")
-
     return render_template("signup.html")
 
 if __name__ == "__main__":
