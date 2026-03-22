@@ -8,67 +8,141 @@
 <style>
 body{
     margin:0;
-    font-family:'Segoe UI';
-    background:#0f172a;
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
     color:white;
 }
+
+/* NAVBAR */
 .navbar{
     display:flex;
     justify-content:space-between;
-    padding:15px;
-    background:#020617;
+    align-items:center;
+    padding:15px 30px;
+    background:rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
 }
+
+/* PROFILE */
+.profile{
+    font-weight:bold;
+}
+
+/* MAIN CARD */
 .main{
-    padding:40px;
+    max-width:900px;
+    margin:40px auto;
+    padding:30px;
+    border-radius:15px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(10px);
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
 }
-#editor{
-    height:350px;
+
+/* FILTERS */
+.filters{
+    margin-bottom:20px;
 }
-button{
-    padding:10px;
-    background:#6366f1;
-    color:white;
-    border:none;
-    border-radius:6px;
-}
+
 select{
     padding:8px;
+    border-radius:6px;
     margin-right:10px;
+    background:#1e293b;
+    color:white;
+    border:none;
+}
+
+/* PROBLEM */
+h2{
+    margin-bottom:10px;
+}
+
+/* EDITOR */
+#editor{
+    height:350px;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid #334155;
+}
+
+/* BUTTONS */
+.buttons{
+    margin-top:15px;
+}
+
+button{
+    padding:10px 18px;
+    margin-right:10px;
+    border:none;
+    border-radius:8px;
+    background:#6366f1;
+    color:white;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    background:#4f46e5;
+    transform:scale(1.05);
+}
+
+/* OUTPUT */
+#output{
+    margin-top:20px;
+    padding:15px;
+    border-radius:10px;
+    background:#020617;
+    border:1px solid #1e293b;
+}
+
+/* STATS */
+.stats{
+    margin-top:10px;
+    font-size:14px;
+    color:#94a3b8;
 }
 </style>
 </head>
 
 <body>
 
+<!-- NAVBAR -->
 <div class="navbar">
     <h2>🚀 CodeMentor</h2>
 
-    <div>
+    <div class="profile">
         {% if username %}
-            👤 {{ username }} <a href="/logout" style="color:white;">Logout</a>
+            👤 {{ username }} | <a href="/logout" style="color:white;">Logout</a>
         {% else %}
             <a href="/login" style="color:white;">Login</a>
             <a href="/signup" style="color:white;">Signup</a>
         {% endif %}
     </div>
 </div>
-<p>📊 Solved: {{ solved }} | Attempts: {{ total }} | Accuracy: {{ accuracy }}%</p>
-<p>🔥 Streak: {{ streak }} days</p>
+
+<!-- MAIN -->
 <div class="main">
 
-<!-- 🔥 FILTERS -->
+<div class="stats">
+📊 Solved: {{ solved }} | Attempts: {{ total }} | Accuracy: {{ accuracy }}%  
+🔥 Streak: {{ streak }} days
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
 <select onchange="changeDifficulty(this.value)">
-    <option value="All" {% if difficulty=="All" %}selected{% endif %}>All</option>
-    <option value="Easy" {% if difficulty=="Easy" %}selected{% endif %}>Easy</option>
-    <option value="Medium" {% if difficulty=="Medium" %}selected{% endif %}>Medium</option>
+    <option value="All">All</option>
+    <option value="Easy">Easy</option>
+    <option value="Medium">Medium</option>
 </select>
 
 <select onchange="changeCategory(this.value)">
-    <option value="All" {% if category=="All" %}selected{% endif %}>All</option>
-    <option value="Array" {% if category=="Array" %}selected{% endif %}>Array</option>
-    <option value="String" {% if category=="String" %}selected{% endif %}>String</option>
-    <option value="Math" {% if category=="Math" %}selected{% endif %}>Math</option>
+    <option value="All">All</option>
+    <option value="Array">Array</option>
+    <option value="String">String</option>
 </select>
+</div>
 
 <h2>{{ problem.title }}</h2>
 <p>{{ problem.description }}</p>
@@ -79,14 +153,12 @@ select{
 
 <input type="hidden" name="code" id="code">
 <input type="hidden" name="problem_index" value="{{ current_index }}">
-<input type="hidden" name="difficulty" value="{{ difficulty }}">
-<input type="hidden" name="category" value="{{ category }}">
 
-<br><br>
-
+<div class="buttons">
 <button type="button" onclick="runCode()">Run</button>
-<button type="button" onclick="getHint()">💡 Get Hint</button>
+<button type="button" onclick="getHint()">💡 Hint</button>
 <button type="submit">Submit</button>
+</div>
 
 </form>
 
@@ -118,35 +190,13 @@ function runCode(){
 fetch("/run",{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"code="+encodeURIComponent(editor.getValue())
-    +"&problem_index="+document.querySelector('[name=problem_index]').value
-    +"&difficulty="+document.querySelector('[name=difficulty]').value
-    +"&category="+document.querySelector('[name=category]').value
+body:"code="+encodeURIComponent(editor.getValue())+
+"&problem_index="+document.querySelector('[name=problem_index]').value
 })
 .then(res=>res.text())
 .then(data=>document.getElementById("output").innerText=data);
 }
 
-function changeDifficulty(level){
-window.location.href="/?difficulty="+level;
-}
-
-function changeCategory(cat){
-window.location.href="/?category="+cat;
-}
-
-</script>
-<script>
-
-function saveCode(){
-    document.getElementById("code").value=editor.getValue();
-}
-
-function runCode(){
-    // existing code
-}
-
-/* 🔥 ADD BELOW */
 function getHint(){
 fetch("/hint",{
 method:"POST",
@@ -155,11 +205,18 @@ body:"code="+encodeURIComponent(editor.getValue())+
 "&problem_index="+document.querySelector('[name=problem_index]').value
 })
 .then(res=>res.text())
-.then(data=>{
-document.getElementById("output").innerText=data;
-});
+.then(data=>document.getElementById("output").innerText=data);
+}
+
+function changeDifficulty(d){
+window.location.href="/?difficulty="+d;
+}
+
+function changeCategory(c){
+window.location.href="/?category="+c;
 }
 
 </script>
+
 </body>
 </html>
