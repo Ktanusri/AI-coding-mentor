@@ -31,6 +31,10 @@ button{
     border:none;
     border-radius:6px;
 }
+select{
+    padding:8px;
+    margin-right:10px;
+}
 </style>
 </head>
 
@@ -41,37 +45,47 @@ button{
 
     <div>
         {% if username %}
-            👤 {{ username }} <a href="/logout">Logout</a>
+            👤 {{ username }} <a href="/logout" style="color:white;">Logout</a>
         {% else %}
-            <a href="/login">Login</a>
-            <a href="/signup">Signup</a>
+            <a href="/login" style="color:white;">Login</a>
+            <a href="/signup" style="color:white;">Signup</a>
         {% endif %}
     </div>
 </div>
 
 <div class="main">
 
-<!-- Difficulty Filter -->
+<!-- 🔥 FILTERS -->
 <select onchange="changeDifficulty(this.value)">
     <option value="All" {% if difficulty=="All" %}selected{% endif %}>All</option>
     <option value="Easy" {% if difficulty=="Easy" %}selected{% endif %}>Easy</option>
     <option value="Medium" {% if difficulty=="Medium" %}selected{% endif %}>Medium</option>
 </select>
 
+<select onchange="changeCategory(this.value)">
+    <option value="All" {% if category=="All" %}selected{% endif %}>All</option>
+    <option value="Array" {% if category=="Array" %}selected{% endif %}>Array</option>
+    <option value="String" {% if category=="String" %}selected{% endif %}>String</option>
+    <option value="Math" {% if category=="Math" %}selected{% endif %}>Math</option>
+</select>
+
 <h2>{{ problem.title }}</h2>
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit" onsubmit="saveCode()">
+
 <div id="editor"></div>
 
 <input type="hidden" name="code" id="code">
 <input type="hidden" name="problem_index" value="{{ current_index }}">
 <input type="hidden" name="difficulty" value="{{ difficulty }}">
+<input type="hidden" name="category" value="{{ category }}">
 
 <br><br>
 
 <button type="button" onclick="runCode()">Run</button>
 <button type="submit">Submit</button>
+
 </form>
 
 <div id="output">
@@ -83,6 +97,7 @@ button{
 </div>
 
 <script>
+
 require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}});
 
 require(["vs/editor/editor.main"],function(){
@@ -101,7 +116,10 @@ function runCode(){
 fetch("/run",{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"code="+encodeURIComponent(editor.getValue())+"&problem_index="+document.querySelector('[name=problem_index]').value+"&difficulty="+document.querySelector('[name=difficulty]').value
+body:"code="+encodeURIComponent(editor.getValue())
+    +"&problem_index="+document.querySelector('[name=problem_index]').value
+    +"&difficulty="+document.querySelector('[name=difficulty]').value
+    +"&category="+document.querySelector('[name=category]').value
 })
 .then(res=>res.text())
 .then(data=>document.getElementById("output").innerText=data);
@@ -110,6 +128,11 @@ body:"code="+encodeURIComponent(editor.getValue())+"&problem_index="+document.qu
 function changeDifficulty(level){
 window.location.href="/?difficulty="+level;
 }
+
+function changeCategory(cat){
+window.location.href="/?category="+cat;
+}
+
 </script>
 
 </body>

@@ -16,11 +16,17 @@ with open("problems.json") as f:
 def home():
 
     difficulty = request.args.get("difficulty", "All")
+    category = request.args.get("category", "All")
 
-    if difficulty == "All":
-        problems = all_problems
-    else:
-        problems = [p for p in all_problems if p["difficulty"] == difficulty]
+    problems = all_problems
+
+    # filter by difficulty
+    if difficulty != "All":
+        problems = [p for p in problems if p["difficulty"] == difficulty]
+
+    # filter by category
+    if category != "All":
+        problems = [p for p in problems if p.get("category", "General") == category]
 
     index = int(request.args.get("problem", 0))
 
@@ -35,10 +41,11 @@ def home():
         problems=problems,
         current_index=index,
         difficulty=difficulty,
+        category=category,
         username=session.get("username")
     )
 
-# ---------------- RUN CODE ----------------
+# ---------------- RUN ----------------
 
 @app.route("/run", methods=["POST"])
 def run_code():
@@ -46,11 +53,15 @@ def run_code():
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
     difficulty = request.form.get("difficulty", "All")
+    category = request.form.get("category", "All")
 
-    if difficulty == "All":
-        problems = all_problems
-    else:
-        problems = [p for p in all_problems if p["difficulty"] == difficulty]
+    problems = all_problems
+
+    if difficulty != "All":
+        problems = [p for p in problems if p["difficulty"] == difficulty]
+
+    if category != "All":
+        problems = [p for p in problems if p.get("category", "General") == category]
 
     problem = problems[index]
 
@@ -83,11 +94,7 @@ def evaluate_code(user_code, problem):
             return "❌ Function not found"
 
         for inp, expected in problem["test_cases"] + problem["hidden_cases"]:
-            try:
-                result = func(inp)
-            except:
-                return f"❌ Error on input {inp}"
-
+            result = func(inp)
             if result != expected:
                 return f"Failed ❌ (Input: {inp}, Expected: {expected}, Got: {result})"
 
@@ -104,11 +111,15 @@ def submit():
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
     difficulty = request.form.get("difficulty", "All")
+    category = request.form.get("category", "All")
 
-    if difficulty == "All":
-        problems = all_problems
-    else:
-        problems = [p for p in all_problems if p["difficulty"] == difficulty]
+    problems = all_problems
+
+    if difficulty != "All":
+        problems = [p for p in problems if p["difficulty"] == difficulty]
+
+    if category != "All":
+        problems = [p for p in problems if p.get("category", "General") == category]
 
     problem = problems[index]
 
@@ -116,7 +127,6 @@ def submit():
 
     status = evaluate_code(user_code, problem)
 
-    # Auto next
     if status == "Passed ✅":
         next_index = index + 1
         if next_index >= len(problems):
@@ -126,8 +136,8 @@ def submit():
                 problems=problems,
                 current_index=index,
                 difficulty=difficulty,
+                category=category,
                 result="🎉 All problems completed!",
-                feedback="Great job!",
                 username=username
             )
     else:
@@ -139,6 +149,7 @@ def submit():
         problems=problems,
         current_index=next_index,
         difficulty=difficulty,
+        category=category,
         result=status,
         username=username
     )
@@ -155,11 +166,7 @@ def login():
         conn = sqlite3.connect("database.db")
         cursor = conn.cursor()
 
-        cursor.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (username, password)
-        )
-
+        cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
         user = cursor.fetchone()
         conn.close()
 
@@ -171,14 +178,10 @@ def login():
 
     return render_template("login.html")
 
-# ---------------- LOGOUT ----------------
-
 @app.route("/logout")
 def logout():
     session.pop("username", None)
     return redirect("/")
-
-# ---------------- SIGNUP ----------------
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -190,19 +193,13 @@ def signup():
         conn = sqlite3.connect("database.db")
         cursor = conn.cursor()
 
-        cursor.execute(
-            "INSERT INTO users (username,password) VALUES (?,?)",
-            (username, password)
-        )
-
+        cursor.execute("INSERT INTO users (username,password) VALUES (?,?)", (username, password))
         conn.commit()
         conn.close()
 
         return redirect("/login")
 
     return render_template("signup.html")
-
-# ---------------- RUN ----------------
 
 if __name__ == "__main__":
     app.run(debug=True)

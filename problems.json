@@ -3,6 +3,7 @@
     "title": "Find Maximum",
     "description": "Return maximum number from a list",
     "difficulty": "Easy",
+    "category": "Array",
     "function_name": "find_max",
     "test_cases": [
       [[3, 5, 1, 8, 2], 8],
@@ -17,6 +18,7 @@
     "title": "Sum of Array",
     "description": "Return sum of elements in a list",
     "difficulty": "Easy",
+    "category": "Array",
     "function_name": "find_sum",
     "test_cases": [
       [[1, 2, 3], 6],
@@ -31,6 +33,7 @@
     "title": "Reverse List",
     "description": "Return reversed list",
     "difficulty": "Easy",
+    "category": "Array",
     "function_name": "reverse_list",
     "test_cases": [
       [[1, 2, 3], [3, 2, 1]]
@@ -43,6 +46,7 @@
     "title": "Find Minimum",
     "description": "Return minimum value from list",
     "difficulty": "Easy",
+    "category": "Array",
     "function_name": "find_min",
     "test_cases": [
       [[3, 1, 2], 1]
@@ -55,6 +59,7 @@
     "title": "Sum of Even Numbers",
     "description": "Return sum of even numbers in list",
     "difficulty": "Medium",
+    "category": "Array",
     "function_name": "sum_even",
     "test_cases": [
       [[1, 2, 3, 4], 6]
@@ -67,6 +72,7 @@
     "title": "Check Palindrome",
     "description": "Check if string is palindrome",
     "difficulty": "Medium",
+    "category": "String",
     "function_name": "is_palindrome",
     "test_cases": [
       [["madam"], true]
@@ -79,6 +85,7 @@
     "title": "Count Vowels",
     "description": "Count vowels in a string",
     "difficulty": "Easy",
+    "category": "String",
     "function_name": "count_vowels",
     "test_cases": [
       [["hello"], 2]
