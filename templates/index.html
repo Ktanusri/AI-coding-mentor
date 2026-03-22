@@ -8,225 +8,109 @@
 <style>
 body{
     margin:0;
-    font-family:'Segoe UI',sans-serif;
+    font-family:'Segoe UI';
     background:#0f172a;
     color:white;
 }
-
-/* NAVBAR */
 .navbar{
     display:flex;
     justify-content:space-between;
-    align-items:center;
-    padding:15px 30px;
+    padding:15px;
     background:#020617;
-    border-bottom:1px solid #1e293b;
 }
-
-/* PROFILE */
-.profile{
-    position:relative;
-    cursor:pointer;
-}
-
-.profile-circle{
-    width:40px;
-    height:40px;
-    border-radius:50%;
-    background:#9333ea;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-/* DROPDOWN */
-.dropdown{
-    display:none;
-    position:absolute;
-    right:0;
-    top:50px;
-    background:#1e293b;
-    border-radius:8px;
-    padding:10px;
-    min-width:150px;
-}
-
-.dropdown a{
-    display:block;
-    padding:8px;
-    color:white;
-    text-decoration:none;
-}
-
-.dropdown a:hover{
-    background:#334155;
-}
-
-/* MAIN */
 .main{
     padding:40px;
 }
-
-/* SELECT */
-select{
-    padding:8px;
-    border-radius:6px;
-    margin-bottom:15px;
-}
-
-/* EDITOR */
 #editor{
     height:350px;
-    border-radius:10px;
 }
-
-/* BUTTON */
 button{
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
+    padding:10px;
     background:#6366f1;
     color:white;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#4f46e5;
-}
-
-/* OUTPUT */
-#output{
-    margin-top:20px;
-    background:#020617;
-    padding:15px;
-    border-radius:10px;
-    border:1px solid #1e293b;
+    border:none;
+    border-radius:6px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
     <h2>🚀 CodeMentor</h2>
 
-    <div class="profile" onclick="toggleDropdown()">
-        <div class="profile-circle">
-            {{ username[0]|upper if username else "G" }}
-        </div>
-
-        <div id="dropdown" class="dropdown">
-            {% if username %}
-                <p style="padding:8px;">👤 {{ username }}</p>
-                <a href="/logout">Logout</a>
-            {% else %}
-                <a href="/login">Login</a>
-                <a href="/signup">Signup</a>
-            {% endif %}
-        </div>
+    <div>
+        {% if username %}
+            👤 {{ username }} <a href="/logout">Logout</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/signup">Signup</a>
+        {% endif %}
     </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
-<!-- PROBLEM SELECT -->
-<select onchange="changeProblem(this.value)">
-    {% for p in problems %}
-        <option value="{{ loop.index0 }}" {% if loop.index0 == current_index %}selected{% endif %}>
-            {{ p.title }}
-        </option>
-    {% endfor %}
+<!-- Difficulty Filter -->
+<select onchange="changeDifficulty(this.value)">
+    <option value="All" {% if difficulty=="All" %}selected{% endif %}>All</option>
+    <option value="Easy" {% if difficulty=="Easy" %}selected{% endif %}>Easy</option>
+    <option value="Medium" {% if difficulty=="Medium" %}selected{% endif %}>Medium</option>
 </select>
 
-<h1>{{ problem.title }}</h1>
-
-<p><b>Difficulty:</b> {{ problem.difficulty }}</p>
+<h2>{{ problem.title }}</h2>
 <p>{{ problem.description }}</p>
 
 <form method="POST" action="/submit" onsubmit="saveCode()">
-
 <div id="editor"></div>
 
 <input type="hidden" name="code" id="code">
-<input type="hidden" name="problem_index" id="problem_index" value="{{ current_index }}">
+<input type="hidden" name="problem_index" value="{{ current_index }}">
+<input type="hidden" name="difficulty" value="{{ difficulty }}">
 
 <br><br>
 
-<button type="button" onclick="runCode()">Run Code</button>
-<button type="submit">Submit Code</button>
-
+<button type="button" onclick="runCode()">Run</button>
+<button type="submit">Submit</button>
 </form>
 
-<!-- OUTPUT -->
 <div id="output">
-
 {% if result %}
-    {% if "Passed" in result %}
-        <p style="color:#22c55e;">✅ {{ result }}</p>
-        <p style="color:#22c55e;">🎉 Moving to next problem...</p>
-    {% else %}
-        <p style="color:#ef4444;">❌ {{ result }}</p>
-    {% endif %}
+<p>{{ result }}</p>
 {% endif %}
-
-{% if feedback %}
-    <hr>
-    <p style="color:#facc15;">🤖 Feedback:</p>
-    <p>{{ feedback }}</p>
-{% endif %}
-
 </div>
 
 </div>
 
-<!-- SCRIPTS -->
 <script>
-
-require.config({
-paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}
-});
+require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs'}});
 
 require(["vs/editor/editor.main"],function(){
 window.editor=monaco.editor.create(document.getElementById("editor"),{
-value:"def find_max(arr):\n    return max(arr)",
+value:"def function():\n    pass",
 language:"python",
 theme:"vs-dark"
 });
 });
 
+function saveCode(){
+document.getElementById("code").value=editor.getValue();
+}
+
 function runCode(){
 fetch("/run",{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"code="+encodeURIComponent(editor.getValue())+"&problem_index="+document.getElementById("problem_index").value
+body:"code="+encodeURIComponent(editor.getValue())+"&problem_index="+document.querySelector('[name=problem_index]').value+"&difficulty="+document.querySelector('[name=difficulty]').value
 })
 .then(res=>res.text())
-.then(data=>{
-document.getElementById("output").innerText=data;
-});
+.then(data=>document.getElementById("output").innerText=data);
 }
 
-function saveCode(){
-document.getElementById("code").value = editor.getValue();
+function changeDifficulty(level){
+window.location.href="/?difficulty="+level;
 }
-
-function changeProblem(index){
-window.location.href = "/?problem=" + index;
-}
-
-function toggleDropdown(){
-let d = document.getElementById("dropdown");
-d.style.display = d.style.display === "block" ? "none" : "block";
-}
-
 </script>
-<div class="sidebar">
-    <h2>🚀 CodeMentor</h2>
-    <a href="/">Problems</a>
-    <a href="/leaderboard">Leaderboard</a>
-    <a href="/profile">Profile</a>
-</div>
+
 </body>
 </html>

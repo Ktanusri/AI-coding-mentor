@@ -5,93 +5,28 @@ import json
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# ---------------- DATABASE ----------------
-
-def init_db():
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            password TEXT
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS submissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            code TEXT,
-            duration REAL,
-            status TEXT
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-
-init_db()
-
 # ---------------- LOAD PROBLEMS ----------------
 
-try:
-    with open("problems.json") as f:
-        problems = json.load(f)
-except:
-    problems = [
-        {
-            "title": "Find Maximum",
-            "description": "Return maximum number from list",
-            "difficulty": "Easy",
-            "function_name": "find_max",
-            "test_cases": [[[3,5,1,8,2],8]],
-            "hidden_cases": []
-        }
-    ]
-
-# ---------------- AI FEEDBACK ----------------
-
-def get_ai_feedback(code):
-    return "💡 AI feedback coming soon!"
-
-# ---------------- CODE EXECUTION ----------------
-
-def evaluate_code(user_code, problem):
-    try:
-        local_scope = {}
-        exec(user_code, {}, local_scope)
-
-        func_name = problem["function_name"]
-
-        if func_name not in local_scope:
-            return f"❌ Function '{func_name}' not found"
-
-        func = local_scope[func_name]
-
-        test_cases = problem["test_cases"] + problem["hidden_cases"]
-
-        for inp, expected in test_cases:
-            try:
-                result = func(inp)
-            except Exception:
-                return f"❌ Error on input {inp}"
-
-            if result != expected:
-                return f"Failed ❌ (Input: {inp}, Expected: {expected}, Got: {result})"
-
-        return "Passed ✅"
-
-    except Exception as e:
-        return f"❌ Code Error: {str(e)}"
+with open("problems.json") as f:
+    all_problems = json.load(f)
 
 # ---------------- HOME ----------------
 
 @app.route("/")
 def home():
 
+    difficulty = request.args.get("difficulty", "All")
+
+    if difficulty == "All":
+        problems = all_problems
+    else:
+        problems = [p for p in all_problems if p["difficulty"] == difficulty]
+
     index = int(request.args.get("problem", 0))
+
+    if index >= len(problems):
+        index = 0
+
     problem = problems[index]
 
     return render_template(
@@ -99,6 +34,7 @@ def home():
         problem=problem,
         problems=problems,
         current_index=index,
+        difficulty=difficulty,
         username=session.get("username")
     )
 
@@ -109,6 +45,13 @@ def run_code():
 
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
+    difficulty = request.form.get("difficulty", "All")
+
+    if difficulty == "All":
+        problems = all_problems
+    else:
+        problems = [p for p in all_problems if p["difficulty"] == difficulty]
+
     problem = problems[index]
 
     try:
@@ -127,6 +70,32 @@ def run_code():
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
+# ---------------- EVALUATE ----------------
+
+def evaluate_code(user_code, problem):
+    try:
+        local_scope = {}
+        exec(user_code, {}, local_scope)
+
+        func = local_scope.get(problem["function_name"])
+
+        if not func:
+            return "❌ Function not found"
+
+        for inp, expected in problem["test_cases"] + problem["hidden_cases"]:
+            try:
+                result = func(inp)
+            except:
+                return f"❌ Error on input {inp}"
+
+            if result != expected:
+                return f"Failed ❌ (Input: {inp}, Expected: {expected}, Got: {result})"
+
+        return "Passed ✅"
+
+    except Exception as e:
+        return f"❌ Code Error: {str(e)}"
+
 # ---------------- SUBMIT ----------------
 
 @app.route("/submit", methods=["POST"])
@@ -134,76 +103,45 @@ def submit():
 
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
+    difficulty = request.form.get("difficulty", "All")
+
+    if difficulty == "All":
+        problems = all_problems
+    else:
+        problems = [p for p in all_problems if p["difficulty"] == difficulty]
+
     problem = problems[index]
 
     username = session.get("username", "guest")
 
-    # Evaluate
     status = evaluate_code(user_code, problem)
-    feedback = get_ai_feedback(user_code)
 
-    # Auto next problem
+    # Auto next
     if status == "Passed ✅":
         next_index = index + 1
         if next_index >= len(problems):
-         return render_template(
-        "index.html",
-        problem=problem,
-        problems=problems,
-        current_index=index,
-        result="🎉 All problems completed!",
-        feedback="Great job!",
-        username=username
-    )
+            return render_template(
+                "index.html",
+                problem=problem,
+                problems=problems,
+                current_index=index,
+                difficulty=difficulty,
+                result="🎉 All problems completed!",
+                feedback="Great job!",
+                username=username
+            )
     else:
         next_index = index
-
-    # Save to DB
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "INSERT INTO submissions (username, code, duration, status) VALUES (?, ?, ?, ?)",
-        (username, user_code, 0, status)
-    )
-
-    conn.commit()
-    conn.close()
 
     return render_template(
         "index.html",
         problem=problems[next_index],
         problems=problems,
         current_index=next_index,
+        difficulty=difficulty,
         result=status,
-        feedback=feedback,
         username=username
     )
-
-@app.route("/profile")
-def profile():
-    username = session.get("username")
-    return render_template("profile.html", username=username)
-# ---------------- LEADERBOARD ----------------
-
-@app.route("/leaderboard")
-def leaderboard():
-
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT username, COUNT(*) as score 
-        FROM submissions 
-        WHERE status = 'Passed ✅'
-        GROUP BY username 
-        ORDER BY score DESC
-    """)
-
-    data = cursor.fetchall()
-    conn.close()
-
-    return render_template("leaderboard.html", data=data)
 
 # ---------------- LOGIN ----------------
 
@@ -211,7 +149,6 @@ def leaderboard():
 def login():
 
     if request.method == "POST":
-
         username = request.form["username"]
         password = request.form["password"]
 
@@ -247,7 +184,6 @@ def logout():
 def signup():
 
     if request.method == "POST":
-
         username = request.form["username"]
         password = request.form["password"]
 
@@ -266,7 +202,7 @@ def signup():
 
     return render_template("signup.html")
 
-# ---------------- RUN APP ----------------
+# ---------------- RUN ----------------
 
 if __name__ == "__main__":
     app.run(debug=True)
