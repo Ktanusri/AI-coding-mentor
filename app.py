@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, redirect
 import sqlite3
 import json
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -10,10 +11,30 @@ app.secret_key = "supersecretkey"
 with open("problems.json") as f:
     all_problems = json.load(f)
 
-# ---------------- PROGRESS CALC ----------------
+# ---------------- INIT DB ----------------
+
+def init_db():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            code TEXT,
+            status TEXT,
+            date TEXT
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# ---------------- PROGRESS ----------------
 
 def get_progress(username):
-
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
@@ -31,85 +52,88 @@ def get_progress(username):
 
     conn.close()
 
-    accuracy = 0
-    if total > 0:
-        accuracy = int((solved / total) * 100)
-
+    accuracy = int((solved / total) * 100) if total > 0 else 0
     return solved, total, accuracy
 
-# ---------------- AI HINT ----------------
+# ---------------- STREAK ----------------
 
-def get_hint(code, problem):
+def get_streak(username):
 
-    if problem["function_name"] not in code:
-        return f"💡 Define function '{problem['function_name']}' first"
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
 
-    if "for" not in code and "while" not in code:
-        return "💡 Try using a loop"
+    cursor.execute("""
+        SELECT DISTINCT date FROM submissions
+        WHERE username=? AND status='Passed ✅'
+        ORDER BY date DESC
+    """, (username,))
 
-    if "max" in problem["title"].lower() and "max(" not in code:
-        return "💡 Use max() function"
+    dates = cursor.fetchall()
+    conn.close()
 
-    if "sum" in problem["title"].lower() and "sum(" not in code:
-        return "💡 Try sum() function"
+    if not dates:
+        return 0
 
-    if "return" not in code:
-        return "💡 Don't forget to return value"
+    streak = 0
+    today = datetime.today().date()
 
-    return "✅ Good approach! Handle edge cases."
+    for i, row in enumerate(dates):
+        d = datetime.strptime(row[0], "%Y-%m-%d").date()
+
+        if i == 0:
+            if d == today or d == today - timedelta(days=1):
+                streak = 1
+            else:
+                break
+        else:
+            if d == prev_day - timedelta(days=1):
+                streak += 1
+            else:
+                break
+
+        prev_day = d
+
+    return streak
 
 # ---------------- HOME ----------------
 
 @app.route("/")
 def home():
 
-    difficulty = request.args.get("difficulty", "All")
-    category = request.args.get("category", "All")
-
-    problems = all_problems
-
-    if difficulty != "All":
-        problems = [p for p in problems if p["difficulty"] == difficulty]
-
-    if category != "All":
-        problems = [p for p in problems if p.get("category", "General") == category]
-
     index = int(request.args.get("problem", 0))
-    if index >= len(problems):
+    if index >= len(all_problems):
         index = 0
 
-    problem = problems[index]
+    problem = all_problems[index]
 
     username = session.get("username", "guest")
+
     solved, total, accuracy = get_progress(username)
+    streak = get_streak(username)
 
     return render_template(
         "index.html",
         problem=problem,
-        problems=problems,
+        problems=all_problems,
         current_index=index,
-        difficulty=difficulty,
-        category=category,
         username=username,
         solved=solved,
         total=total,
-        accuracy=accuracy
+        accuracy=accuracy,
+        streak=streak
     )
 
 # ---------------- RUN ----------------
 
 @app.route("/run", methods=["POST"])
 def run_code():
-
-    user_code = request.form.get("code")
+    code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
-
     problem = all_problems[index]
 
     try:
         local_scope = {}
-        exec(user_code, {}, local_scope)
-
+        exec(code, {}, local_scope)
         func = local_scope.get(problem["function_name"])
 
         if not func:
@@ -127,17 +151,22 @@ def run_code():
 def hint():
     code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
-
     problem = all_problems[index]
-    return get_hint(code, problem)
+
+    if problem["function_name"] not in code:
+        return f"💡 Define function '{problem['function_name']}'"
+
+    if "for" not in code:
+        return "💡 Try loop"
+
+    return "💡 Think logically step by step"
 
 # ---------------- EVALUATE ----------------
 
-def evaluate_code(user_code, problem):
+def evaluate_code(code, problem):
     try:
         local_scope = {}
-        exec(user_code, {}, local_scope)
-
+        exec(code, {}, local_scope)
         func = local_scope.get(problem["function_name"])
 
         if not func:
@@ -146,34 +175,34 @@ def evaluate_code(user_code, problem):
         for inp, expected in problem["test_cases"] + problem["hidden_cases"]:
             result = func(inp)
             if result != expected:
-                return (
-                    f"❌ Failed\nInput: {inp}\nYour Output: {result}\nExpected: {expected}"
-                )
+                return f"❌ Failed\nInput: {inp}\nExpected: {expected}\nGot: {result}"
 
         return "Passed ✅"
 
     except Exception as e:
-        return f"❌ Code Error: {str(e)}"
+        return f"❌ Error: {str(e)}"
 
 # ---------------- SUBMIT ----------------
 
 @app.route("/submit", methods=["POST"])
 def submit():
 
-    user_code = request.form.get("code")
+    code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
     problem = all_problems[index]
 
     username = session.get("username", "guest")
 
-    status = evaluate_code(user_code, problem)
+    status = evaluate_code(code, problem)
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
+    today = datetime.today().strftime("%Y-%m-%d")
+
     cursor.execute(
-        "INSERT INTO submissions (username, code, duration, status) VALUES (?, ?, ?, ?)",
-        (username, user_code, 0, status)
+        "INSERT INTO submissions (username, code, status, date) VALUES (?, ?, ?, ?)",
+        (username, code, status, today)
     )
 
     conn.commit()
@@ -187,6 +216,7 @@ def submit():
         next_index = index
 
     solved, total, accuracy = get_progress(username)
+    streak = get_streak(username)
 
     return render_template(
         "index.html",
@@ -197,7 +227,8 @@ def submit():
         username=username,
         solved=solved,
         total=total,
-        accuracy=accuracy
+        accuracy=accuracy,
+        streak=streak
     )
 
 # ---------------- LOGIN ----------------
