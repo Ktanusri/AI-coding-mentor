@@ -10,7 +10,34 @@ app.secret_key = "supersecretkey"
 with open("problems.json") as f:
     all_problems = json.load(f)
 
-# ---------------- AI HINT SYSTEM ----------------
+# ---------------- PROGRESS CALC ----------------
+
+def get_progress(username):
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM submissions WHERE username=? AND status='Passed ✅'",
+        (username,)
+    )
+    solved = cursor.fetchone()[0]
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM submissions WHERE username=?",
+        (username,)
+    )
+    total = cursor.fetchone()[0]
+
+    conn.close()
+
+    accuracy = 0
+    if total > 0:
+        accuracy = int((solved / total) * 100)
+
+    return solved, total, accuracy
+
+# ---------------- AI HINT ----------------
 
 def get_hint(code, problem):
 
@@ -21,15 +48,15 @@ def get_hint(code, problem):
         return "💡 Try using a loop"
 
     if "max" in problem["title"].lower() and "max(" not in code:
-        return "💡 Python has built-in max() function"
+        return "💡 Use max() function"
 
     if "sum" in problem["title"].lower() and "sum(" not in code:
-        return "💡 Try using sum() function"
+        return "💡 Try sum() function"
 
     if "return" not in code:
-        return "💡 Don't forget to return the result"
+        return "💡 Don't forget to return value"
 
-    return "✅ Good approach! Try handling edge cases."
+    return "✅ Good approach! Handle edge cases."
 
 # ---------------- HOME ----------------
 
@@ -48,11 +75,13 @@ def home():
         problems = [p for p in problems if p.get("category", "General") == category]
 
     index = int(request.args.get("problem", 0))
-
     if index >= len(problems):
         index = 0
 
     problem = problems[index]
+
+    username = session.get("username", "guest")
+    solved, total, accuracy = get_progress(username)
 
     return render_template(
         "index.html",
@@ -61,7 +90,10 @@ def home():
         current_index=index,
         difficulty=difficulty,
         category=category,
-        username=session.get("username")
+        username=username,
+        solved=solved,
+        total=total,
+        accuracy=accuracy
     )
 
 # ---------------- RUN ----------------
@@ -71,18 +103,8 @@ def run_code():
 
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
-    difficulty = request.form.get("difficulty", "All")
-    category = request.form.get("category", "All")
 
-    problems = all_problems
-
-    if difficulty != "All":
-        problems = [p for p in problems if p["difficulty"] == difficulty]
-
-    if category != "All":
-        problems = [p for p in problems if p.get("category", "General") == category]
-
-    problem = problems[index]
+    problem = all_problems[index]
 
     try:
         local_scope = {}
@@ -94,13 +116,12 @@ def run_code():
             return "⚠️ Function not found"
 
         result = func(problem["test_cases"][0][0])
-
         return f"✅ Output: {result}"
 
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
-# ---------------- HINT ROUTE ----------------
+# ---------------- HINT ----------------
 
 @app.route("/hint", methods=["POST"])
 def hint():
@@ -108,12 +129,7 @@ def hint():
     index = int(request.form.get("problem_index", 0))
 
     problem = all_problems[index]
-
-    hint = get_hint(code, problem)
-
-    return hint
-
-# ---------------- EVALUATE ----------------
+    return get_hint(code, problem)
 
 # ---------------- EVALUATE ----------------
 
@@ -128,17 +144,10 @@ def evaluate_code(user_code, problem):
             return "❌ Function not found"
 
         for inp, expected in problem["test_cases"] + problem["hidden_cases"]:
-            try:
-                result = func(inp)
-            except Exception as e:
-                return f"❌ Runtime Error on input {inp}: {str(e)}"
-
+            result = func(inp)
             if result != expected:
                 return (
-                    f"❌ Failed\n"
-                    f"Input: {inp}\n"
-                    f"Your Output: {result}\n"
-                    f"Expected: {expected}"
+                    f"❌ Failed\nInput: {inp}\nYour Output: {result}\nExpected: {expected}"
                 )
 
         return "Passed ✅"
@@ -153,26 +162,31 @@ def submit():
 
     user_code = request.form.get("code")
     index = int(request.form.get("problem_index", 0))
-
     problem = all_problems[index]
 
     username = session.get("username", "guest")
 
     status = evaluate_code(user_code, problem)
 
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO submissions (username, code, duration, status) VALUES (?, ?, ?, ?)",
+        (username, user_code, 0, status)
+    )
+
+    conn.commit()
+    conn.close()
+
     if status == "Passed ✅":
         next_index = index + 1
         if next_index >= len(all_problems):
-            return render_template(
-                "index.html",
-                problem=problem,
-                problems=all_problems,
-                current_index=index,
-                result="🎉 All problems completed!",
-                username=username
-            )
+            next_index = index
     else:
         next_index = index
+
+    solved, total, accuracy = get_progress(username)
 
     return render_template(
         "index.html",
@@ -180,7 +194,10 @@ def submit():
         problems=all_problems,
         current_index=next_index,
         result=status,
-        username=username
+        username=username,
+        solved=solved,
+        total=total,
+        accuracy=accuracy
     )
 
 # ---------------- LOGIN ----------------
