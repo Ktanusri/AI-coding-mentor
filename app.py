@@ -36,8 +36,20 @@ init_db()
 
 # ---------------- LOAD PROBLEMS ----------------
 
-with open("problems.json") as f:
-    problems = json.load(f)
+try:
+    with open("problems.json") as f:
+        problems = json.load(f)
+except:
+    problems = [
+        {
+            "title": "Find Maximum",
+            "description": "Return maximum number from list",
+            "difficulty": "Easy",
+            "function_name": "find_max",
+            "test_cases": [[[3,5,1,8,2],8]],
+            "hidden_cases": []
+        }
+    ]
 
 # ---------------- AI FEEDBACK ----------------
 
@@ -79,9 +91,7 @@ def evaluate_code(user_code, problem):
 @app.route("/")
 def home():
 
-    index = request.args.get("problem", 0)
-    index = int(index)
-
+    index = int(request.args.get("problem", 0))
     problem = problems[index]
 
     return render_template(
@@ -128,9 +138,27 @@ def submit():
 
     username = session.get("username", "guest")
 
+    # Evaluate
     status = evaluate_code(user_code, problem)
     feedback = get_ai_feedback(user_code)
 
+    # Auto next problem
+    if status == "Passed ✅":
+        next_index = index + 1
+        if next_index >= len(problems):
+         return render_template(
+        "index.html",
+        problem=problem,
+        problems=problems,
+        current_index=index,
+        result="🎉 All problems completed!",
+        feedback="Great job!",
+        username=username
+    )
+    else:
+        next_index = index
+
+    # Save to DB
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
@@ -144,14 +172,18 @@ def submit():
 
     return render_template(
         "index.html",
-        problem=problem,
+        problem=problems[next_index],
         problems=problems,
-        current_index=index,
+        current_index=next_index,
         result=status,
         feedback=feedback,
         username=username
     )
 
+@app.route("/profile")
+def profile():
+    username = session.get("username")
+    return render_template("profile.html", username=username)
 # ---------------- LEADERBOARD ----------------
 
 @app.route("/leaderboard")
